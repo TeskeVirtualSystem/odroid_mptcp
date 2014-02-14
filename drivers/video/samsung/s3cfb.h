@@ -348,4 +348,9 @@ extern void s6e8aa1_early_suspend(void);
 extern void s6e8aa1_late_resume(void);
 #endif
 
+#if defined(CONFIG_FB_S5P_S6EVR01)
+extern void s6evr01_early_suspend(void);
+extern void s6evr01_late_resume(void);
+#endif
+
 #endif /* _S3CFB_H */

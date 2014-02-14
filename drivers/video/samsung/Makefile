@@ -5,6 +5,7 @@ ifeq ($(CONFIG_FB_S5P),y)
 obj-$(CONFIG_FB_S5P_DUMMY_MIPI_LCD)	+= s3cfb_dummymipilcd.o
 obj-$(CONFIG_FB_S5P_LG4591)	    += s3cfb_lg4591.o
 obj-$(CONFIG_FB_S5P_S6E8AA1)	+= s3cfb_s6e8aa1.o
+obj-$(CONFIG_FB_S5P_S6EVR01)	+= s3cfb_s6evr01.o
 obj-$(CONFIG_FB_S5P_MIPI_DSIM)	+= s5p_dsim_lowlevel.o
 obj-$(CONFIG_FB_S5P_MIPI_DSIM)	+= s5p-dsim.o
 
@@ -22,6 +23,7 @@ obj-$(CONFIG_FB_S5P_LTN101AL03) += ltn101al03.o
 obj-$(CONFIG_FB_S5P_LP101WH1) 	+= lp101wh1.o
 obj-$(CONFIG_FB_S5P_U133WA01) 	+= u133wa01.o
 obj-$(CONFIG_FB_S5P_FAKE_FB) 	+= fake_fb.o
+obj-$(CONFIG_FB_S5P_EJ70NA01C) 	+= ej70na01c.o
 endif
 
 ifeq ($(CONFIG_FB_S5P_DEBUG),y)

@@ -350,6 +350,8 @@ static int __devinit s5p_cec_probe(struct platform_device *pdev)
 	cec_rx_struct.buffer = buffer;
 	cec_rx_struct.size   = 0;
 	TV_CLK_GET_WITH_ERR_CHECK(hdmi_cec_clk, pdev, "hdmicec");
+	//codewalker
+	return 0;
 
 err_kmalloc:
 	free_irq(irq_num, &pdev->id);

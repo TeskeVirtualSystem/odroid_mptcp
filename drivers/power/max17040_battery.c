@@ -35,9 +35,9 @@
 #define MAX17040_CMD_LSB	0xFF
 
 #define MAX17040_DELAY			msecs_to_jiffies(3000)
-#define MAX17040_BATTERY_FULL	99
-#define	POWER_OFF_VOLTAGE		3400000
-#define	POWER_MAX_VOLTAGE		4200000
+#define MAX17040_BATTERY_FULL	98
+#define	POWER_OFF_VOLTAGE		3412500
+#define	POWER_MAX_VOLTAGE		4300000
 
 //#define	MAX17040_DEBUG
 
@@ -155,7 +155,11 @@ static void max17040_get_soc(struct i2c_client *client)
 
 	chip->soc = (max17040_read_reg(client, MAX17040_SOC_MSB) >> 8) & 0xFF;
 
-	chip->soc = (chip->soc - 2) * 100 / (100 - 2);
+	#if defined(MAX17040_DEBUG)
+		printk("chip->soc = %d\n", chip->soc);
+	#endif
+
+//	chip->soc = (chip->soc - 2) * 100 / (100 - 2);
 	
 	if(chip->soc > 100) chip->soc = 100;
 	if(chip->soc < 0  ) chip->soc = 0;
@@ -170,10 +174,6 @@ static void max17040_get_soc(struct i2c_client *client)
 	else	{
 		if(chip->vcell >= POWER_OFF_VOLTAGE)	chip->soc = 1;
 	}
-
-	#if defined(MAX17040_DEBUG)
-		printk("chip->soc = %d\n", chip->soc);
-	#endif
 }
 
 static void max17040_get_version(struct i2c_client *client)

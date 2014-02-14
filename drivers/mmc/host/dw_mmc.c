@@ -1651,7 +1651,9 @@ static irqreturn_t dw_mci_interrupt(int irq, void *dev_id)
 
 		if (pending & SDMMC_INT_CD) {
 			mci_writel(host, RINTSTS, SDMMC_INT_CD);
+	#if !defined(CONFIG_MACH_ODROID_4X12) // odroid : dwmci_cd pin use gpio
 			tasklet_schedule(&host->card_tasklet);
+	#endif
 		}
 
 		/* Handle SDIO Interrupts */

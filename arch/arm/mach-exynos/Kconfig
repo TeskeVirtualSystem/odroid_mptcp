@@ -373,6 +373,54 @@ choice
 	default EXYNOS4X12_1400MHZ_SUPPORT
 	default EXYNOS5250_1400MHZ_SUPPORT
 
+config EXYNOS4X12_2000MHZ_SUPPORT
+    bool "Max 2000MHz CPUFREQ LEVEL"
+    depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+    help
+      Max 2.0Ghz support
+
+config EXYNOS4X12_1800MHZ_SUPPORT
+    bool "Max 1800MHz CPUFREQ LEVEL"
+    depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+    help
+      Max 1.8Ghz support
+
+config EXYNOS4X12_1700MHZ_SUPPORT
+    bool "Max 1700MHz CPUFREQ LEVEL"
+    depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+    help
+      Max 1.7Ghz support
+
+config EXYNOS4X12_1600MHZ_SUPPORT
+    bool "Max 1600MHz CPUFREQ LEVEL"
+    depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+    help
+      Max 1.6Ghz support
+
+config EXYNOS4X12_1500MHZ_SUPPORT
+	bool "Max 1500MHz CPUFREQ LEVEL"
+	depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+	help
+	  Max 1.5Ghz support
+
+config EXYNOS4X12_1400MHZ_SUPPORT
+	bool "Max 1400MHz CPUFREQ LEVEL"
+	depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+	help
+	  Max 1.4Ghz support
+
+config EXYNOS4X12_1200MHZ_SUPPORT
+	bool "Max 1200MHz CPUFREQ LEVEL"
+	depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+	help
+	  Max 1.2Ghz support
+
+config EXYNOS4X12_1000MHZ_SUPPORT
+	bool "Max 1000MHz CPUFREQ LEVEL"
+	depends on EXYNOS4_CPUFREQ && (CPU_EXYNOS4212 || CPU_EXYNOS4412)
+	help
+	  Max 1.0Ghz support
+
 config EXYNOS5250_1400MHZ_SUPPORT
 	bool "Max 1400MHz CPUFREQ LEVEL"
 	depends on EXYNOS5_CPUFREQ && CPU_EXYNOS5250
@@ -682,11 +730,6 @@ choice
 		help
 		  This enables support for ODROID_U(Quad-Core ARM PC)
 
-	config BOARD_ODROID_U2
-		bool "ODROID_U2 ARM Quad-Core Ultra mini-PC"
-		help
-		  This enables support for ODROID_U2(Quad-Core ARM PC)
-
 	config BOARD_SMD_A2
 		bool "SMD A2 Board"
 		help
@@ -837,7 +880,7 @@ endif
 
 config ODROID_FAN
 	bool "ODROID Dev-Board FAN PWM control driver"
-	depends on BOARD_ODROID_U || BOARD_ODROID_U2
+	depends on BOARD_ODROID_U
 	default n
 	help
 		Use PWM as FAN control

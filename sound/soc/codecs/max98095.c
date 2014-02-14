@@ -570,8 +570,6 @@ static int max98095_volatile(struct snd_soc_codec *codec, unsigned int reg)
 	case M98095_004_CODEC_STS:
 	case M98095_005_DAI1_ALC_STS:
 	case M98095_006_DAI2_ALC_STS:
-	case M98095_007_JACK_AUTO_STS:
-	case M98095_008_JACK_MANUAL_STS:
 	case M98095_009_JACK_VBAT_STS:
 	case M98095_00A_ACC_ADC_STS:
 	case M98095_00B_MIC_NG_AGC_STS:
@@ -618,7 +616,8 @@ static inline void max98095_write_reg_cache(struct snd_soc_codec *codec,
 static int max98095_i2c_write(struct snd_soc_codec *codec, unsigned int reg,
 	unsigned int value)
 {
-	max98095_write_reg_cache (codec, reg, value);
+	//codewalker
+	//max98095_write_reg_cache (codec, reg, value);
 
 	if(i2c_smbus_write_byte_data(codec->control_data, (u8)(reg & 0xFF), (u8)(value & 0xFF))<0) {
 		printk("%s error!!! [%d]\n",__FUNCTION__,__LINE__);
@@ -1118,16 +1117,6 @@ static int max98095_reset(struct snd_soc_codec *codec)
 		return ret;
 	}
 
-	/* Reset to hardware default for registers, as there is not
-	 * a soft reset hardware control register */
-	for (i = M98095_010_HOST_INT_CFG; i < M98095_REG_MAX_CACHED; i++) {
-		ret = snd_soc_write(codec, i, max98095_reg_def[i]);
-		if (ret < 0) {
-			dev_err(codec->dev, "Failed to reset: %d\n", ret);
-			return ret;
-		}
-	}
-
 	return ret;
 }
 
@@ -1175,7 +1164,7 @@ static int max98095_probe(struct snd_soc_codec *codec)
 	}
 	dev_info(codec->dev, "revision 0x%02x\n", ret);
 
-	snd_soc_write(codec, M98095_097_PWR_SYS, M98095_PWRSV);
+	snd_soc_write(codec, M98095_097_PWR_SYS, M98095_SHDNRUN);
 
 	/* initialize registers cache to hardware default */
 	max98095_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
@@ -1238,13 +1227,10 @@ static int max98095_i2c_probe(struct i2c_client *i2c,
 	if (max98095 == NULL)
 		return -ENOMEM;
 	
-//	codec = &max98095->codec;
 	max98095->control_data = i2c;
 	i2c_set_clientdata(i2c, max98095);
-//	codec->control_data = i2c;
-//	max98095->pdata = i2c->dev.platform_data;
+	max98095->pdata = i2c->dev.platform_data;
 
-//	codec->dev = &i2c->dev;
 	ret = snd_soc_register_codec(&i2c->dev,
 			&soc_codec_dev_max98095, &max98095_dai[0], 1);
 	if (ret < 0){

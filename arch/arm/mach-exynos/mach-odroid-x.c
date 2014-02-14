@@ -416,6 +416,26 @@ static struct s3c_platform_fb u133wa01_data __initdata = {
 	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
 };
 
+#elif defined(CONFIG_FB_S5P_FAKE_FB)
+
+static struct s3c_platform_fb fake_fb_data __initdata = {
+	.hw_ver = 0x70,
+	.clk_name = "sclk_lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S5P_DEFAULT_WINDOW,
+	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
+};
+
+#elif defined(CONFIG_FB_S5P_EJ70NA01C)
+
+static struct s3c_platform_fb ej70na01c_data __initdata = {
+	.hw_ver = 0x70,
+	.clk_name = "sclk_lcd",
+	.nr_wins = 5,
+	.default_win = CONFIG_FB_S5P_DEFAULT_WINDOW,
+	.swap = FB_SWAP_HWORD | FB_SWAP_WORD,
+};
+
 #elif defined(CONFIG_FB_S5P_MIPI_DSIM)
 
 #if defined(CONFIG_FB_S5P_LG4591)
@@ -598,24 +618,81 @@ static void __init mipi_fb_init(void)
 #endif
 #endif
 
+#include <plat/system-reset.h>
+#include <asm/cacheflush.h>
+
+extern  void setup_mm_for_reboot(char mode);
+extern  void arm_machine_flush_console(void);
+
+void odroid_arm_machine_restart(char mode, const char *cmd)
+{
+	/* Disable interrupts first */
+	local_irq_disable();
+	local_fiq_disable();
+
+    // eMMC HW_RST	
+    gpio_request(EXYNOS4_GPK1(2), "GPK1");
+    gpio_direction_output(EXYNOS4_GPK1(2), 0);
+    mdelay(10);
+    gpio_direction_output(EXYNOS4_GPK1(2), 1);
+    gpio_free(EXYNOS4_GPK1(2));
+
+	/*
+	 * Tell the mm system that we are going to reboot -
+	 * we may need it to insert some 1:1 mappings so that
+	 * soft boot works.
+	 */
+	setup_mm_for_reboot(mode);
+
+	/* Clean and invalidate caches */
+	flush_cache_all();
+
+	/* Turn off caching */
+	cpu_proc_fin();
+
+	/* Push out any further dirty data, and ensure cache is empty */
+	flush_cache_all();
+
+	/*
+	 * Now call the architecture specific reboot code.
+	 */
+	arch_reset(mode, cmd);
+
+	/*
+	 * Whoops - the architecture was unable to reboot.
+	 * Tell the user!
+	 */
+	mdelay(1000);
+	printk("Reboot failed -- System halted\n");
+	while (1);
+}
+
+/* cmd from kernel reboot */    
+#define REBOOT_FASTBOOT 0xFAB0
+#define REBOOT_UPDATE   0xFADA
+#define REG_INFORM5            (S5P_INFORM5)
+
 static int exynos4_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
 {
 	int mode = 0;
 
-	if ((code == SYS_RESTART) && _cmd)
-		if (!strcmp((char *)_cmd, "recovery"))
-			mode = 0xf;
+    if(code == SYS_POWER_OFF)   {
+        printk("%s : System Power Off notifier call!\n", __func__);
+    }
+    else    {
+        printk("%s : System Rrestart notifier call!\n", __func__);
 
-	__raw_writel(mode, REG_INFORM4);
+    	if ((code == SYS_RESTART) && _cmd)  {
+    		if (!strcmp((char *)_cmd, "fastboot"))
+    			mode = REBOOT_FASTBOOT;
+    		if (!strcmp((char *)_cmd, "update"))
+    			mode = REBOOT_UPDATE;
+    	}
+    }
+	__raw_writel(mode, REG_INFORM5);
 
-	// eMMC HW_RST	
-	gpio_request(EXYNOS4_GPK1(2), "GPK1");
-	gpio_direction_output(EXYNOS4_GPK1(2), 0);
-	msleep(50);
-	gpio_direction_output(EXYNOS4_GPK1(2), 1);
-	gpio_free(EXYNOS4_GPK1(2));
-
+    printk("%s : Done!\n", __func__);
 	return NOTIFY_DONE;
 }
 
@@ -812,8 +889,8 @@ static struct platform_device mipi_csi_fixed_voltage = {
 
 static	struct touch_pdata	odroidx_touch_pdata =	{
 	.name 			= "odroidx-ts",	/* input drv name */
-	.abs_max_x		= 1280,
-	.abs_max_y		= 720,
+	.abs_max_x		= 1360,
+	.abs_max_y		= 768,
 
 	.area_max		= 10, 
 	.press_max		= 10, 
@@ -824,6 +901,47 @@ static	struct touch_pdata	odroidx_touch_pdata =	{
 	.version		= 0x0100,
 
 	.max_fingers	= 10,
+};
+
+#endif
+
+#if defined(CONFIG_TOUCHSCREEN_SOLOMON_MCP_MT) && defined(CONFIG_FB_S5P_EJ70NA01C)
+#include	<linux/input/touch-pdata.h>
+#include	<linux/input/mcp_solomon-touch.h>
+
+static	struct	touch_pdata		mcp_solomon_touch_pdata = {
+	.name			= "odroidx-ts",		/* input name define */
+	.irq_gpio		= EXYNOS4_GPX3(3),	/* irq gpio define */
+	.reset_gpio		= EXYNOS4_GPX2(1),	/* reset gpio define */
+	.reset_level	= 0,				/* reset level setting (1 = High reset, 0 = Low reset) */
+	.irq_mode		= IRQ_MODE_NORMAL,	/* IRQ_MODE_THREAD, IRQ_MODE_NORMAL, IRQ_MODE_POLLING */
+	.irq_flags		= IRQF_TRIGGER_FALLING | IRQF_DISABLED,
+
+	.abs_max_x		= SENSE_DATA_MAX,
+	.abs_max_y		= DRIVE_DATA_MAX,
+
+	.area_max		= 10, 
+	.press_max		= PRESSURE_MAX, 
+	.id_max			= TRACKING_ID_MAX,
+	
+	.vendor			= 0x16B4, 
+	.product		= 0x0702, 
+	.version		= 0x0100,
+
+#if defined(CONFIG_ANDROID_PARANOID_NETWORK)
+	.max_fingers	= MAX_FINGERS,
+#else
+    // Ubuntu is single touch used
+	.max_fingers	= 1,
+#endif	
+	
+	.touch_work		= SSD253x_work,
+	.early_probe	= SSD253x_early_probe,
+	.probe			= SSD253x_probe,
+	.enable			= SSD253x_enable,
+	.disable		= SSD253x_disable,
+	.i2c_read		= SSD253x_i2c_read,
+	.calibration	= SSD253x_calibration,
 };
 
 #endif
@@ -900,6 +1018,13 @@ static struct i2c_board_info i2c_devs4[] __initdata = {
 };
 static struct i2c_board_info i2c_devs5[] __initdata = {
 
+#if defined(CONFIG_TOUCHSCREEN_SOLOMON_MCP_MT) && defined(CONFIG_FB_S5P_EJ70NA01C)
+	{
+		I2C_BOARD_INFO(I2C_TOUCH_NAME, (0x48)),
+		.platform_data = &mcp_solomon_touch_pdata,
+	},
+#endif
+
 };
 
 #ifdef CONFIG_BATTERY_SAMSUNG
@@ -949,6 +1074,10 @@ static struct platform_device exynos4_busfreq = {
 
 static struct platform_device *smdk4412_devices[] __initdata = {
 	&s3c_device_adc,
+};
+
+static struct platform_device *dwmci_emmc_devices[] __initdata = {
+	&exynos_device_dwmci,
 };
 
 static struct platform_device *smdk4x12_devices[] __initdata = {
@@ -1033,9 +1162,6 @@ static struct platform_device *smdk4x12_devices[] __initdata = {
 #endif
 #ifdef CONFIG_S5P_DEV_MSHC
 	&s3c_device_mshci,
-#endif
-#ifdef CONFIG_EXYNOS4_DEV_DWMCI
-	&exynos_device_dwmci,
 #endif
 #ifdef CONFIG_SND_SAMSUNG_AC97
 	&exynos_device_ac97,
@@ -1676,6 +1802,8 @@ static void exynos4_power_off(void)
 
 static void __init odroid_machine_init(void)
 {
+	int OM_STAT=0;
+
 	pm_power_off = exynos4_power_off;
 	
 #ifdef CONFIG_S3C64XX_DEV_SPI
@@ -1740,6 +1868,13 @@ static void __init odroid_machine_init(void)
 #ifdef CONFIG_FB_S5P_U133WA01
 	s3cfb_set_platdata(&u133wa01_data);
 #endif
+#ifdef CONFIG_FB_S5P_FAKE_FB
+	s3cfb_set_platdata(&fake_fb_data);
+#endif
+#ifdef CONFIG_FB_S5P_EJ70NA01C
+	s3cfb_set_platdata(&ej70na01c_data);
+#endif
+
 #ifdef CONFIG_FB_S5P_MIPI_DSIM
 	s5p_device_dsim.dev.parent = &exynos4_device_pd[PD_LCD0].dev;
 #endif
@@ -1758,10 +1893,6 @@ static void __init odroid_machine_init(void)
 #endif
 
 	samsung_bl_set(&odroid_bl_gpio_info, &odroid_bl_data);
-
-#ifdef CONFIG_EXYNOS4_DEV_DWMCI
-	exynos_dwmci_set_platdata(&exynos_dwmci_pdata);
-#endif
 
 #ifdef CONFIG_VIDEO_EXYNOS_FIMC_IS
 	exynos4_fimc_is_set_platdata(NULL);
@@ -1929,10 +2060,7 @@ static void __init odroid_machine_init(void)
 #ifdef CONFIG_EXYNOS_DEV_PD
 	s5p_device_mfc.dev.parent = &exynos4_device_pd[PD_MFC].dev;
 #endif
-	if (soc_is_exynos4412())
-		exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 220 * MHZ);
-	else
-		exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 267 * MHZ);
+	exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 350 * MHZ);
 #endif
 
 #if defined(CONFIG_VIDEO_SAMSUNG_S5P_MFC)
@@ -1950,6 +2078,14 @@ static void __init odroid_machine_init(void)
 #endif
 
 	exynos_sysmmu_init();
+
+	OM_STAT = readl(EXYNOS4_OM_STAT);
+	if(OM_STAT != BOOT_MMCSD) {
+		printk("%s : [0x%x]EMMC Boot \n",__func__,OM_STAT);
+		exynos_dwmci_set_platdata(&exynos_dwmci_pdata);
+		platform_add_devices(dwmci_emmc_devices, ARRAY_SIZE(dwmci_emmc_devices));
+	}
+	else printk("%s : [0x%x]SD Boot \n",__func__,OM_STAT);
 
 	platform_add_devices(smdk4x12_devices, ARRAY_SIZE(smdk4x12_devices));
 	if (soc_is_exynos4412())
@@ -2039,6 +2175,9 @@ static void __init odroid_machine_init(void)
 	ppmu_init(&exynos_ppmu[PPMU_CPU], &exynos4_busfreq.dev);
 #endif
 	register_reboot_notifier(&exynos4_reboot_notifier);
+	
+	// odroid restart
+	arm_pm_restart = odroid_arm_machine_restart;
 }
 
 #ifdef CONFIG_EXYNOS_C2C

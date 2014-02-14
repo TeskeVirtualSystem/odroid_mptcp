@@ -762,7 +762,6 @@ static void max98090_work(struct work_struct *work)
 {
 	struct max98090_priv *max98090 = container_of(work, struct max98090_priv, work.work);
 	struct snd_soc_codec *codec= max98090->codec;
-	int jack_auto_sts=0;
 	int read_value=0;
 
 //	jack_auto_sts = snd_soc_read(codec, M98090_002_JACK_STS);
@@ -851,64 +850,47 @@ static int max98090_dai1_hw_params(struct snd_pcm_substream *substream,
 	struct snd_soc_codec *codec = dai->codec;
 	struct max98090_priv *max98090 = snd_soc_codec_get_drvdata(codec);
 	struct max98090_cdata *cdata;
-	unsigned long long ni;
 	unsigned int rate;
 	u8 regval;
 
 	cdata = &max98090->dai;
+	rate = params_rate(params);
 
-snd_soc_write(codec, M98090_006_IF_QS, M98090_QS_DAI_I2S_SLV);
-snd_soc_write(codec, M98090_005_SAMPLERATE_QS, M98090_QS_SR_44K1);
-snd_soc_write(codec, M98090_007_DAC_PATH_QS, 0x80);
+	cdata->rate = rate;
 
-//	rate = params_rate(params);
-//
-//	switch (params_format(params)) {
-//	case SNDRV_PCM_FORMAT_S16_LE:
-//		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
-//			M98090_DAI_WS, 0);
-//		break;
-//	case SNDRV_PCM_FORMAT_S24_LE:
-//		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
-//			M98090_DAI_WS, 1);
-//		break;
-//	default:
-//		return -EINVAL;
-//	}
-//
-////	if (rate_value(rate, &regval))
-////		return -EINVAL;
-//
-//	snd_soc_update_bits(codec, M98090_005_SAMPLERATE_QS,
-//		M98090_QS_SR_MASK, M98090_QS_SR_44K1);
-//
-//	cdata->rate = rate;
-//
-//	/* Configure NI when operating as master */
-//	if (snd_soc_read(codec, M98090_021_MASTER_MODE_CLK) & M98090_DAI_MAS) {
-//		if (max98090->sysclk == 0) {
-//			dev_err(codec->dev, "Invalid system clock frequency\n");
-//			return -EINVAL;
-//		}
-//		ni = 65536ULL * (rate < 50000 ? 96ULL : 48ULL)
-//				* (unsigned long long int)rate;
-//		do_div(ni, (unsigned long long int)max98090->sysclk);
-//		snd_soc_write(codec, M98090_01D_ANYCLK_CNTL1,
-//			(ni >> 8) & 0x7F);
-//		snd_soc_write(codec, M98090_01E_ANYCLK_CNTL2,
-//			ni & 0xFF);
-//
-//	}
-//
-//	/* Update sample rate mode */
-//	if (rate < 50000)
-//		snd_soc_update_bits(codec, M98090_026_FILTER_CONFIG,
-//			M98090_FILTER_DHF, 0);
-//	else
-//		snd_soc_update_bits(codec, M98090_026_FILTER_CONFIG,
-//			M98090_FILTER_DHF, M98090_FILTER_DHF);
+	rate = params_rate(params);
 
-//max98090_set_playback_speaker_headset(codec);
+	switch (params_format(params)) {
+	case SNDRV_PCM_FORMAT_S16_LE:
+		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
+			M98090_DAI_WS, 0);
+		break;
+	case SNDRV_PCM_FORMAT_S24_LE:
+		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
+			M98090_DAI_WS, 2);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (rate_value(rate, &regval))
+		return -EINVAL;
+
+	snd_soc_update_bits(codec, M98090_005_SAMPLERATE_QS,
+		M98090_QS_SR_MASK, regval);
+
+	cdata->rate = rate;
+
+	/* Update sample rate mode */
+	if (rate < 50000)
+		snd_soc_update_bits(codec, M98090_026_FILTER_CONFIG,
+			M98090_FILTER_DHF, 0);
+	else
+		snd_soc_update_bits(codec, M98090_026_FILTER_CONFIG,
+			M98090_FILTER_DHF, M98090_FILTER_DHF);
+
+	snd_soc_update_bits(codec, M98090_026_FILTER_CONFIG,
+		M98090_FILTER_MODE, 0);
 
 	return 0;
 }
@@ -925,23 +907,21 @@ static int max98090_dai_set_sysclk(struct snd_soc_dai *dai,
 
 	max98090->sysclk = freq; /* remember current sysclk */
 
-//	/* Setup clocks for slave mode, and using the PLL
-//	 * PSCLK = 0x01 (when master clk is 10MHz to 20MHz)
-//	 *         0x02 (when master clk is 20MHz to 40MHz)..
-//	 *         0x03 (when master clk is 40MHz to 60MHz)..
-//	 */
-//	if ((freq >= 10000000) && (freq < 20000000)) {
-//		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x10);
-//	} else if ((freq >= 20000000) && (freq < 40000000)) {
-//		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x20);
-//	} else if ((freq >= 40000000) && (freq < 60000000)) {
-//		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x30);
-//	} else {
-//		dev_err(codec->dev, "Invalid master clock frequency\n");
-//		return -EINVAL;
-//	}
-
-snd_soc_write(codec, M98090_004_SYS_CLK_QS, M98090_QS_MCLK_11P2896M);
+	/* Setup clocks for slave mode, and using the PLL
+	 * PSCLK = 0x01 (when master clk is 10MHz to 20MHz)
+	 *         0x02 (when master clk is 20MHz to 40MHz)..
+	 *         0x03 (when master clk is 40MHz to 60MHz)..
+	 */
+	if ((freq >= 10000000) && (freq < 20000000)) {
+		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x10);
+	} else if ((freq >= 20000000) && (freq < 40000000)) {
+		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x20);
+	} else if ((freq >= 40000000) && (freq < 60000000)) {
+		snd_soc_write(codec, M98090_01B_SYS_CLK, 0x30);
+	} else {
+		dev_err(codec->dev, "Invalid master clock frequency\n");
+		return -EINVAL;
+	}
 	dev_dbg(dai->dev, "Clock source is %d at %uHz\n", clk_id, freq);
 
 	return 0;
@@ -960,59 +940,38 @@ static int max98090_dai1_set_fmt(struct snd_soc_dai *codec_dai,
 
 	if (fmt != cdata->fmt) {
 		cdata->fmt = fmt;
+		
+		// slave mode
+		snd_soc_write(codec, M98090_021_MASTER_MODE_CLK, master);
 
-//		switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
-//		case SND_SOC_DAIFMT_CBS_CFS:
-//			/* Slave mode PLL */
-//			snd_soc_write(codec, M98090_01D_ANYCLK_CNTL1,
-//				0x60);
-//			snd_soc_write(codec, M98090_01E_ANYCLK_CNTL2,
-//				0x00);
-//			break;
-//		case SND_SOC_DAIFMT_CBM_CFM:
-//			/* Set to master mode */
-//			master = M98090_DAI_MAS;
-//			break;
-//		case SND_SOC_DAIFMT_CBS_CFM:
-//		case SND_SOC_DAIFMT_CBM_CFS:
-//		default:
-//			dev_err(codec->dev, "Clock mode unsupported");
-//			return -EINVAL;
-//		}
-//
-//		switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
-//		case SND_SOC_DAIFMT_I2S:
-//			regval |= M98090_DAI_DLY;
-//			break;
-//		case SND_SOC_DAIFMT_LEFT_J:
-//			break;
-//		default:
-//			return -EINVAL;
-//		}
-//
-//		switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
-//		case SND_SOC_DAIFMT_NB_NF:
-//			break;
-//		case SND_SOC_DAIFMT_NB_IF:
-//			regval |= M98090_DAI_WCI;
-//			break;
-//		case SND_SOC_DAIFMT_IB_NF:
-//			regval |= M98090_DAI_BCI;
-//			break;
-//		case SND_SOC_DAIFMT_IB_IF:
-//			regval |= M98090_DAI_BCI|M98090_DAI_WCI;
-//			break;
-//		default:
-//			return -EINVAL;
-//		}
-//
-//		snd_soc_write(codec, M98090_021_MASTER_MODE_CLK, master);
-//
-//		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
-//			M98090_DAI_DLY | M98090_DAI_BCI | M98090_DAI_RJ |
-//			M98090_DAI_WCI, regval);
+		switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
+		case SND_SOC_DAIFMT_I2S:
+			regval |= M98090_DAI_DLY;
+			break;
+		case SND_SOC_DAIFMT_LEFT_J:
+			break;
+		default:
+			return -EINVAL;
+		}
 
-snd_soc_write(codec, M98090_006_IF_QS, M98090_QS_DAI_I2S_SLV);
+		switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+		case SND_SOC_DAIFMT_NB_NF:
+			break;
+		case SND_SOC_DAIFMT_NB_IF:
+			regval |= M98090_DAI_WCI;
+			break;
+		case SND_SOC_DAIFMT_IB_NF:
+			regval |= M98090_DAI_BCI;
+			break;
+		case SND_SOC_DAIFMT_IB_IF:
+			regval |= M98090_DAI_BCI|M98090_DAI_WCI;
+			break;
+		default:
+			return -EINVAL;
+		}
+		snd_soc_update_bits(codec, M98090_022_DAI_IF_FORMAT,
+			M98090_DAI_DLY | M98090_DAI_BCI | M98090_DAI_RJ |
+			M98090_DAI_WCI, regval);
 	}
 
 	return 0;
@@ -1071,6 +1030,7 @@ struct snd_soc_dai_driver max98090_dai[] = {
 			.formats = MAX98090_FORMATS,
 		},
 		.ops = &max98090_dai1_ops,
+		.symmetric_rates = 1,
 	},
 };
 EXPORT_SYMBOL_GPL(max98090_dai);
@@ -1094,7 +1054,7 @@ static int max98090_resume(struct snd_soc_codec *codec)
 
 static int max98090_reset(struct snd_soc_codec *codec)
 {
-	int i, ret;
+	int ret;
 
 	ret = snd_soc_write(codec, M98090_045_PWR_SYS, 0);
 	if (ret < 0) {
@@ -1106,14 +1066,6 @@ static int max98090_reset(struct snd_soc_codec *codec)
 	if (ret < 0) {
 		dev_err(codec->dev, "Failed to reset codec: %d\n", ret);
 		return ret;
-	}
-
-	for (i = M98090_003_INT_MASK; i < M98090_REG_MAX_CACHED; i++) {
-		ret = snd_soc_write(codec, i, max98090_reg_def[i]);
-		if (ret < 0) {
-			dev_err(codec->dev, "Failed to reset: %d\n", ret);
-			return ret;
-		}
 	}
 
 	return ret;
@@ -1172,11 +1124,8 @@ static int max98090_probe(struct snd_soc_codec *codec)
 
 	snd_soc_write(codec, M98090_03D_JACK_DETECT_CONFIG, 0x80);
 	snd_soc_update_bits(codec, M98090_003_INT_MASK, (1<<2), (1<<2));
-//	snd_soc_write(codec, M98090_014_JACK_INT_EN, 0x99);
 
 	max98090_set_record_main_mic(codec);
-//	max98090_set_playback_speaker_headset(codec);
-
 	snd_soc_update_bits(codec, M98090_045_PWR_SYS, M98090_SHDNRUN, M98090_SHDNRUN);
 
 	max98090_add_widgets(codec);

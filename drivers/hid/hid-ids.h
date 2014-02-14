@@ -699,4 +699,13 @@
 #define USB_VENDOR_ID_ZYDACRON	0x13EC
 #define USB_DEVICE_ID_ZYDACRON_REMOTE_CONTROL	0x0006
 
+/* Elitegroup Computer Systems */
+#define USB_VENDOR_ID_ELITEGROUP    0x03fc
+#define USB_DEVICE_ID_ELITEGROUP_TOUCH  0x05d8
+
+/* Nexio Co., Ltd */
+#define USB_VENDOR_ID_NEXIO     0x1870
+#define USB_DEVICE_ID_NEXIO_42TOUCH     0x0100
+#define USB_DEVICE_ID_NEXIO_TOUCH       0x0119
+
 #endif

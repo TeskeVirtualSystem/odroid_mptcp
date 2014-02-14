@@ -128,6 +128,7 @@ source "drivers/hwspinlock/Kconfig"
 
 source "drivers/clocksource/Kconfig"
 
-source "drivers/gator_v5/Kconfig"
+# source "drivers/gator_v5/Kconfig"
+source "drivers/gator/Kconfig"
 
 endmenu

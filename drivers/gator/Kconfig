@@ -1,0 +1,55 @@
+menuconfig ARM_STREAMLINE_DEBUGGER
+	bool "Enable ARM Streamline Debugger"
+	depends on	ARM
+	default	n
+	help
+	  Enable ARM Streamline debugger(DS-5). Version 5.14  
+
+if ARM_STREAMLINE_DEBUGGER
+config GATOR_MODULE_ENABLE
+	tristate "Make Gator driver for ARM Streamline debugger"
+	default	m
+	select	PROFILING
+	select  PERF_EVENTS
+	select  FTRACE
+	select	ENABLE_DEFAULT_TRACERS
+	select	HIGH_RES_TIMERS
+    select  HW_PERF_EVENTS
+	select	LOCAL_TIMERS if SMP
+	select  CPU_FREQ
+	help
+	  Make Gator driver enable for ARM Streamline debugger(DS-5).  
+
+if 0
+config GATOR_MALI_SUPPORT
+    depends on GATOR_MODULE_ENABLE
+    bool "Debug with Mali support"
+    default n
+    help
+      Enable Mali Debug support.
+
+choice
+	prompt "Mali core Select"
+	depends on GATOR_MALI_SUPPORT
+	default GATOR_MALI_400
+
+config GATOR_MALI_400
+	bool "Mali-400"
+	help
+	  Mali-400 core debug enable.
+
+config GATOR_MALI_T6XX
+	bool "Mali-T6XX"
+	help
+	  Mali-T6xx core debug enable.
+
+endchoice
+endif
+
+config GATOR_DRIVER_TEST
+    bool "Gator Driver Test"
+    depends on GATOR_MODULE_ENABLE
+    default n
+    help
+      Enable Gator Driver Test.
+endif

@@ -655,24 +655,81 @@ static void __init mipi_fb_init(void)
 #endif
 #endif
 
+#include <plat/system-reset.h>
+#include <asm/cacheflush.h>
+
+extern  void setup_mm_for_reboot(char mode);
+extern  void arm_machine_flush_console(void);
+
+void odroid_arm_machine_restart(char mode, const char *cmd)
+{
+	/* Disable interrupts first */
+	local_irq_disable();
+	local_fiq_disable();
+
+    // eMMC HW_RST	
+    gpio_request(EXYNOS4_GPK1(2), "GPK1");
+    gpio_direction_output(EXYNOS4_GPK1(2), 0);
+    mdelay(10);
+    gpio_direction_output(EXYNOS4_GPK1(2), 1);
+    gpio_free(EXYNOS4_GPK1(2));
+
+	/*
+	 * Tell the mm system that we are going to reboot -
+	 * we may need it to insert some 1:1 mappings so that
+	 * soft boot works.
+	 */
+	setup_mm_for_reboot(mode);
+
+	/* Clean and invalidate caches */
+	flush_cache_all();
+
+	/* Turn off caching */
+	cpu_proc_fin();
+
+	/* Push out any further dirty data, and ensure cache is empty */
+	flush_cache_all();
+
+	/*
+	 * Now call the architecture specific reboot code.
+	 */
+	arch_reset(mode, cmd);
+
+	/*
+	 * Whoops - the architecture was unable to reboot.
+	 * Tell the user!
+	 */
+	mdelay(1000);
+	printk("Reboot failed -- System halted\n");
+	while (1);
+}
+
+/* cmd from kernel reboot */    
+#define REBOOT_FASTBOOT 0xFAB0
+#define REBOOT_UPDATE   0xFADA
+#define REG_INFORM5            (S5P_INFORM5)
+
 static int exynos4_notifier_call(struct notifier_block *this,
 					unsigned long code, void *_cmd)
 {
 	int mode = 0;
 
-	if ((code == SYS_RESTART) && _cmd)
-		if (!strcmp((char *)_cmd, "recovery"))
-			mode = 0xf;
+    if(code == SYS_POWER_OFF)   {
+        printk("%s : System Power Off notifier call!\n", __func__);
+    }
+    else    {
+        printk("%s : System Rrestart notifier call!\n", __func__);
 
-	__raw_writel(mode, REG_INFORM4);
+    	if ((code == SYS_RESTART) && _cmd)  {
+    		if (!strcmp((char *)_cmd, "fastboot"))
+    			mode = REBOOT_FASTBOOT;
+    		if (!strcmp((char *)_cmd, "update"))
+    			mode = REBOOT_UPDATE;
+    	}
+    }
+	__raw_writel(mode, REG_INFORM5);
 
-	// eMMC HW_RST	
-	gpio_request(EXYNOS4_GPK1(2), "GPK1");
-	gpio_direction_output(EXYNOS4_GPK1(2), 0);
-	msleep(50);
-	gpio_direction_output(EXYNOS4_GPK1(2), 1);
-	gpio_free(EXYNOS4_GPK1(2));
-
+    printk("%s : Done!\n", __func__);
 	return NOTIFY_DONE;
 }
 
@@ -2183,10 +2240,7 @@ static void __init odroid_machine_init(void)
 #ifdef CONFIG_EXYNOS_DEV_PD
 	s5p_device_mfc.dev.parent = &exynos4_device_pd[PD_MFC].dev;
 #endif
-	if (soc_is_exynos4412())
-		exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 220 * MHZ);
-	else
-		exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 267 * MHZ);
+	exynos4_mfc_setup_clock(&s5p_device_mfc.dev, 350 * MHZ);
 #endif
 
 #if defined(CONFIG_VIDEO_SAMSUNG_S5P_MFC)
@@ -2293,6 +2347,9 @@ static void __init odroid_machine_init(void)
 	ppmu_init(&exynos_ppmu[PPMU_CPU], &exynos4_busfreq.dev);
 #endif
 	register_reboot_notifier(&exynos4_reboot_notifier);
+	
+	// odroid restart
+	arm_pm_restart = odroid_arm_machine_restart;
 }
 
 #ifdef CONFIG_EXYNOS_C2C

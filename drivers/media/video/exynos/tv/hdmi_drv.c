@@ -810,7 +810,7 @@ static int __devinit hdmi_probe(struct platform_device *pdev)
 		dev_err(dev, "request interrupt failed.\n");
 		goto fail_vdev;
 	}
-	#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+	#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 	    // odroid_get_hdmi_resolution function from odroid-sysfs.c
 	    extern  int odroid_get_hdmi_resolution  (void);
         hdmi_dev->cur_preset = odroid_get_hdmi_resolution() ? V4L2_DV_1080P60 : V4L2_DV_720P60;

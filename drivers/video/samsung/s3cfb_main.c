@@ -119,7 +119,7 @@ int s3cfb_register_framebuffer(struct s3cfb_global *fbdev)
 			s3cfb_check_var_window(fbdev, &fbdev->fb[j]->var,
 					fbdev->fb[j]);
 			s3cfb_set_par_window(fbdev, fbdev->fb[j]);
-			#if defined(CONFIG_FB_S5P_S6E8AA1)
+			#if (defined(CONFIG_FB_S5P_S6E8AA1)||defined(CONFIG_FB_S5P_S6EVR01))
                 if (fb_prepare_logo(fbdev->fb[j], FB_ROTATE_UR)) {
                     fb_set_cmap(&fbdev->fb[j]->cmap, fbdev->fb[j]);
                     fb_show_logo(fbdev->fb[j], FB_ROTATE_UR);
@@ -472,6 +472,10 @@ void s3cfb_early_suspend(struct early_suspend *h)
 	s6e8aa1_early_suspend();
 #endif
 
+#if defined(CONFIG_FB_S5P_S6EVR01)
+	s6evr01_early_suspend();
+#endif
+
 	info->system_state = POWER_OFF;
 
 	for (i = 0; i < FIMD_MAX; i++) {
@@ -592,6 +596,10 @@ void s3cfb_late_resume(struct early_suspend *h)
 
 #if defined(CONFIG_FB_S5P_S6E8AA1)
 	s6e8aa1_late_resume();
+#endif
+
+#if defined(CONFIG_FB_S5P_S6EVR01)
+	s6evr01_late_resume();
 #endif
 
 	return;

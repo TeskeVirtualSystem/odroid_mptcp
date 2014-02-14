@@ -55,7 +55,7 @@ static void s3cfb_gpio_setup_24bpp(unsigned int start, unsigned int size,
 
 void s3cfb_cfg_gpio(struct platform_device *pdev)
 {
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 	s3cfb_gpio_setup_24bpp(EXYNOS4_GPF0(0), 8, S3C_GPIO_SFN(2), S5P_GPIO_DRVSTR_LV4);
 	s3cfb_gpio_setup_24bpp(EXYNOS4_GPF1(0), 8, S3C_GPIO_SFN(2), S5P_GPIO_DRVSTR_LV4);
 	s3cfb_gpio_setup_24bpp(EXYNOS4_GPF2(0), 8, S3C_GPIO_SFN(2), S5P_GPIO_DRVSTR_LV4);
@@ -291,7 +291,7 @@ int s3cfb_backlight_on(struct platform_device *pdev)
 #if defined(CONFIG_MACH_ODROID_4X12)
 	int err;
 
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
     	err = gpio_request_one(EXYNOS4_GPA1(3), GPIOF_OUT_INIT_HIGH, "GPA1.3");
 #else
 	#if defined(CONFIG_FB_S5P_LP101WH1) || defined(CONFIG_FB_S5P_U133WA01)
@@ -330,6 +330,11 @@ static int reset_lcd(void)
 #if defined(CONFIG_FB_S5P_S6E8AA1)
 	gpio_direction_output(GPIO_MLCD_RST, 1);
 #endif	
+
+#if defined(CONFIG_FB_S5P_S6EVR01)
+	gpio_direction_output(GPIO_MLCD_RST, 0);
+#endif	
+
 #if defined(CONFIG_FB_S5P_LG4591)
 	gpio_direction_output(GPIO_MLCD_RST, 0);
 #endif	
@@ -343,7 +348,7 @@ int s3cfb_backlight_off(struct platform_device *pdev)
 #if defined(CONFIG_MACH_ODROID_4X12)
 	int err;
 
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
     	err = gpio_request_one(EXYNOS4_GPA1(3), GPIOF_OUT_INIT_LOW, "GPA1.3");
 #else    	
 	#if defined(CONFIG_FB_S5P_LP101WH1) || defined(CONFIG_FB_S5P_U133WA01)
@@ -375,6 +380,10 @@ int s3cfb_backlight_off(struct platform_device *pdev)
     extern  void    s6e8aa1_lcd_init  (void);
 #endif
 
+#if defined(CONFIG_FB_S5P_S6EVR01)
+    extern  void    s6evr01_lcd_init  (void);
+#endif
+
 int s3cfb_lcd_on(struct platform_device *pdev)
 {
     printk("%s\n", __func__);
@@ -384,6 +393,10 @@ int s3cfb_lcd_on(struct platform_device *pdev)
 
 #if defined(CONFIG_FB_S5P_S6E8AA1)
     s6e8aa1_lcd_init  ();
+#endif
+
+#if defined(CONFIG_FB_S5P_S6EVR01)
+    s6evr01_lcd_init();
 #endif
 	return 0;
 }

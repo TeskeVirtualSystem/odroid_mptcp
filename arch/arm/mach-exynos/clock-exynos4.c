@@ -2040,6 +2040,22 @@ void __init_or_cpufreq exynos4_setup_clocks(void)
 				exynos4_clk_mout_epll.clk.name, exynos4_clk_sclk_audio0.clk.name);
 #endif
 
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)|| \
+	defined(CONFIG_BOARD_ODROID_U) || \
+	defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)|| \
+	defined(CONFIG_BOARD_SMD_A2)
+
+	__raw_writel(0x10001, EXYNOS4_CLKDIV_FSYS1);
+
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)|| \
+	defined(CONFIG_BOARD_ODROID_U)		// odroid-q bcm4330
+	__raw_writel(0x10001, EXYNOS4_CLKDIV_FSYS2);
+#else	
+	__raw_writel(0x80008, EXYNOS4_CLKDIV_FSYS2);
+#endif
+
+#endif
+
 	if (clk_set_parent(&exynos4_clk_sclk_audio1.clk, &exynos4_clk_mout_epll.clk))
 		printk(KERN_ERR "Unable to set parent %s of clock %s.\n",
 				exynos4_clk_mout_epll.clk.name, exynos4_clk_sclk_audio1.clk.name);
@@ -2049,26 +2065,6 @@ void __init_or_cpufreq exynos4_setup_clocks(void)
 	if (clk_set_parent(&exynos4_clk_mout_epll.clk, &clk_fout_epll))
 		printk(KERN_ERR "Unable to set parent %s of clock %s.\n",
 				clk_fout_epll.name, exynos4_clk_mout_epll.clk.name);
-
-#if 	defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)|| \
-		defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)|| \
-		defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)
-
-	__raw_writel(0x10001, EXYNOS4_CLKDIV_FSYS1);
-	if (clk_set_parent(&exynos4_clk_dout_mmc0.clk, &exynos4_clk_aclk_160.clk))
-		printk(KERN_ERR "Unable to set parent %s of clock %s.\n",
-				 exynos4_clk_aclk_160.clk.name,
-				 exynos4_clk_dout_mmc0.clk.name);
-	if (clk_set_parent(&exynos4_clk_dout_mmc1.clk, &exynos4_clk_aclk_160.clk))
-		printk(KERN_ERR "Unable to set parent %s of clock %s.\n",
-				 exynos4_clk_aclk_160.clk.name,
-				 exynos4_clk_dout_mmc1.clk.name);
-	__raw_writel(0x10001, EXYNOS4_CLKDIV_FSYS2);
-	if (clk_set_parent(&exynos4_clk_dout_mmc2.clk, &exynos4_clk_aclk_160.clk))
-		printk(KERN_ERR "Unable to set parent %s of clock %s.\n",
-				 exynos4_clk_aclk_160.clk.name,
-				 exynos4_clk_dout_mmc2.clk.name);
-#endif
 
 	clk_fout_vpll.enable = exynos4_clk_vpll_ctrl;
 	clk_fout_vpll.ops = &exynos4_vpll_ops;

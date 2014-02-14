@@ -89,8 +89,8 @@ static unsigned int GPU_MHZ	= 1000000;
 	int mali_gpu_clk = 800;
 	int mali_gpu_vol = 1200000;
 #else
-	int mali_gpu_clk = 440;
-	int mali_gpu_vol = 1050000;
+int mali_gpu_clk = 440;
+int mali_gpu_vol = 1050000;
 #endif
 
 #if MALI_DVFS_ENABLED
@@ -463,7 +463,7 @@ static mali_bool init_mali_clock(void)
 		goto err_clock_get;
 	}
 
-	MALI_PRINT(("init_mali_clock mali_clock %p \n", mali_clock));
+	MALI_PRINT(("init_mali_clock mali_clock %d \n", mali_gpu_clk));
 
 
 #ifdef CONFIG_REGULATOR
@@ -541,6 +541,23 @@ static _mali_osk_errcode_t enable_mali_clocks(void)
 		mali_clk_set_rate(mali_runtime_resume.clk, GPU_MHZ);
 		set_mali_dvfs_current_step(MALI_DVFS_STEPS+1);
 	}
+	/* lock/unlock CPU freq by Mali */
+	if(mali_gpu_clk >= 440)
+		#if defined(CONFIG_EXYNOS4X12_2000MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(2000);
+		#elif defined(CONFIG_EXYNOS4X12_1800MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(1800);
+		#elif defined(CONFIG_EXYNOS4X12_1700MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(1704);
+		#elif defined(CONFIG_EXYNOS4X12_1600MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(1600);
+		#elif defined(CONFIG_EXYNOS4X12_1500MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(1500);
+		#elif defined(CONFIG_EXYNOS4X12_1400MHZ_SUPPORT)
+		err = cpufreq_lock_by_mali(1400);
+		#else
+		err = cpufreq_lock_by_mali(1200);
+		#endif
 #else
 	mali_regulator_set_voltage(mali_runtime_resume.vol, mali_runtime_resume.vol);
 	mali_clk_set_rate(mali_runtime_resume.clk, GPU_MHZ);

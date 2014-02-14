@@ -52,7 +52,11 @@ static u32 rtl871x_open_fw(struct _adapter *padapter, void **pphfwfile_hdl,
  	return len;
 #else
 	int rc;
-	const char firmware_file[] = "rtlwifi/rtl8712u.bin";
+#if defined(CONFIG_ANDROID_PARANOID_NETWORK)
+    static const char firmware_file[] = "rtl8712u.bin";
+#else
+    static const char firmware_file[] = "rtlwifi/rtl8712u.bin";
+#endif
 	//rtlwifi/rtl8712u.bin";
 	const struct firmware **praw = (const struct firmware **)
 				       (pphfwfile_hdl);
@@ -72,7 +76,11 @@ static u32 rtl871x_open_fw(struct _adapter *padapter, void **pphfwfile_hdl,
 	return (*praw)->size;
 #endif	
 }
-MODULE_FIRMWARE("rtlwifi/rtl8712u.bin");
+#if defined(CONFIG_ANDROID_PARANOID_NETWORK)
+    MODULE_FIRMWARE("/system/etc/firmware/rtl8712u.bin");
+#else
+    MODULE_FIRMWARE("rtlwifi/rtl8712u.bin");
+#endif    
 
 static void fill_fwpriv(struct _adapter *padapter, struct fw_priv *pfwpriv)
 {

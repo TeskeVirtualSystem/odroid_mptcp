@@ -250,18 +250,18 @@ static int __devinit max17047_probe(struct i2c_client *client,
 	chip->battery.properties		= max17047_battery_props;
 	chip->battery.num_properties	= ARRAY_SIZE(max17047_battery_props);
 
+#if defined(CONFIG_MACH_ODROID_4X12)||defined(CONFIG_MACH_ODROID_4210)
+	max17047_set_config(client);
+#endif
+		
+	max17047_get_version(client);
+
 	ret = power_supply_register(&client->dev, &chip->battery);
 	if (ret) {
 		dev_err(&client->dev, "failed: power supply register\n");
 		kfree(chip);
 		return ret;
 	}
-
-#if defined(CONFIG_MACH_ODROID_4X12)||defined(CONFIG_MACH_ODROID_4210)
-	max17047_set_config(client);
-#endif
-		
-	max17047_get_version(client);
 
 	dev_info(&client->dev, "power supply max17047-battery registerd.\n");
 

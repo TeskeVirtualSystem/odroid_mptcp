@@ -73,7 +73,6 @@ ifeq ($(CONFIG_MACH_ODROID_4X12),y)
 	obj-$(CONFIG_BOARD_ODROID_X)	+= mach-odroid-x.o odroid-sysfs.o
 	obj-$(CONFIG_BOARD_ODROID_X2)	+= mach-odroid-x.o odroid-sysfs.o
 	obj-$(CONFIG_BOARD_ODROID_U)	+= mach-odroid-u.o odroid-sysfs.o
-	obj-$(CONFIG_BOARD_ODROID_U2)	+= mach-odroid-u.o odroid-sysfs.o 
 	obj-$(CONFIG_BOARD_SMD_A2)		+= mach-smd-a2.o odroid-sysfs.o
 endif
 

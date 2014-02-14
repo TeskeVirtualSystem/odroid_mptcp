@@ -184,11 +184,11 @@
 	#define M98090_DAI_MAS                  (1<<7)
 
 /* M98090_022_DAI_IF_FORMAT */
-	#define M98090_DAI_RJ                   (1<<2)
-	#define M98090_DAI_WCI                  (1<<6)
-	#define M98090_DAI_BCI                  (1<<5)
-	#define M98090_DAI_DLY                  (1<<4)
-	#define M98090_DAI_WS                   (1<<0)
+	#define M98090_DAI_RJ                   (1<<5)
+	#define M98090_DAI_WCI                  (1<<4)
+	#define M98090_DAI_BCI                  (1<<3)
+	#define M98090_DAI_DLY                  (1<<2)
+	#define M98090_DAI_WS                   (3<<0)
 
 /* M98090_023_DAI_TDM_FORMAT1 */
 

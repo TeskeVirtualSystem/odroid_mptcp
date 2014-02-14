@@ -18,9 +18,11 @@
 #include <linux/sysfs.h>
 #include <linux/input.h>
 #include <linux/gpio.h>
+#include <linux/io.h>
 
 #include <mach/gpio.h>
 #include <mach/regs-gpio.h>
+#include <mach/regs-pmu.h>
 #include <plat/gpio-cfg.h>
 
 //[*]--------------------------------------------------------------------------------------------------[*]
@@ -86,7 +88,7 @@ enum	{
 	#include	"odroidq-sysfs.h"
 #elif defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2) // Odroid-X Series
 	#include	"odroidx-sysfs.h"
-#elif defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2) // Odroid-U Series
+#elif defined(CONFIG_BOARD_ODROID_U) // Odroid-U Series
 	#include	"odroidu-sysfs.h"
 #elif defined(CONFIG_BOARD_SMD_A2) // smda2
 	#include	"smda2-sysfs.h"
@@ -116,7 +118,7 @@ static struct {
 	int 	value;			// Default Value(only for output)
 	int		pud;			// Pull up/down register setting : S3C_GPIO_PULL_DOWN, UP, NONE
 } sDefaultGpios[] = {
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
     // EXT_INT3 : HDMI Resolution Select
 	{	EXYNOS4_GPX0(3), "EXYNOS4_GPX0(3)",	0,	0,	S3C_GPIO_PULL_DOWN	},
 	// EXT_INT18 : User Key (HDMI Resolution Select)
@@ -145,8 +147,9 @@ int	odroid_get_wifi_irqnum	(void)
 EXPORT_SYMBOL(odroid_get_wifi_irqnum);
 
 //[*]--------------------------------------------------------------------------------------------------[*]
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 static  unsigned char   HdmiBootArgs[5];
+static  unsigned char   VOutArgs[5];
 
 // Bootargs parsing
 static int __init hdmi_resolution_setup(char *line)
@@ -156,6 +159,13 @@ static int __init hdmi_resolution_setup(char *line)
 }
 __setup("hdmi_phy_res=", hdmi_resolution_setup);
 
+static int __init vout_mode_setup(char *line)
+{
+    sprintf(VOutArgs, "%s", line);
+    return  0;
+}
+__setup("v_out=", vout_mode_setup);
+
 int odroid_get_hdmi_resolution  (void)
 {
     // Bootarg setup 1080p
@@ -163,8 +173,16 @@ int odroid_get_hdmi_resolution  (void)
         
     return  (gpio_get_value(EXYNOS4_GPX2(2)) || gpio_get_value(EXYNOS4_GPX0(3)));
 }
-
 EXPORT_SYMBOL(odroid_get_hdmi_resolution);
+
+int odroid_get_vout_mode  (void)
+{
+    // Bootarg setup dvi
+    if(!strncmp("dvi", VOutArgs, 3))   	return   1;
+	else 								return   0;
+}
+EXPORT_SYMBOL(odroid_get_vout_mode);
+
 #endif
 //[*]--------------------------------------------------------------------------------------------------[*]
 //
@@ -175,13 +193,17 @@ static	ssize_t show_gpio	(struct device *dev, struct device_attribute *attr, cha
 static 	ssize_t set_gpio	(struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 static	ssize_t show_hdmi	(struct device *dev, struct device_attribute *attr, char *buf);
 
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)||defined(CONFIG_BOARD_ODROID_Q) || defined(CONFIG_BOARD_ODROID_Q2)
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_Q) || defined(CONFIG_BOARD_ODROID_Q2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 static	ssize_t show_resolution         (struct device *dev, struct device_attribute *attr, char *buf);
+static	ssize_t show_vout_mode			(struct device *dev, struct device_attribute *attr, char *buf);
+static 	ssize_t set_led_blink           (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 #endif
 static 	ssize_t set_poweroff_trigger    (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
+static	ssize_t show_boot_mode          (struct device *dev, struct device_attribute *attr, char *buf);
 #endif
-
+static	ssize_t show_inform	            (struct device *dev, struct device_attribute *attr, char *buf);
+static 	ssize_t set_inform	            (struct device *dev, struct device_attribute *attr, const char *buf, size_t count);
 //[*]--------------------------------------------------------------------------------------------------[*]
 //[*]--------------------------------------------------------------------------------------------------[*]
 static	DEVICE_ATTR(wifi_enable, 		S_IRWXUGO, show_gpio, set_gpio);
@@ -217,14 +239,25 @@ static	DEVICE_ATTR(led_blue,			S_IRWXUGO, show_gpio, set_gpio);
 //[*]--------------------------------------------------------------------------------------------------[*]
 static	DEVICE_ATTR(hdmi_state,			S_IRWXUGO, show_hdmi, NULL);
 //[*]--------------------------------------------------------------------------------------------------[*]
-//[*]--------------------------------------------------------------------------------------------------[*]
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)||defined(CONFIG_BOARD_ODROID_Q) || defined(CONFIG_BOARD_ODROID_Q2)
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_Q) || defined(CONFIG_BOARD_ODROID_Q2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 static	DEVICE_ATTR(hdmi_resolution,	S_IRWXUGO, show_resolution, NULL);
+static	DEVICE_ATTR(vout_mode,			S_IRWXUGO, show_vout_mode, NULL);
+static  DEVICE_ATTR(led_blink,          S_IRWXUGO, NULL, set_led_blink);
 #endif
 static	DEVICE_ATTR(poweroff_trigger,	S_IRWXUGO, NULL, set_poweroff_trigger);
+static	DEVICE_ATTR(boot_mode,			S_IRWXUGO, show_boot_mode, NULL);
 #endif
 //[*]--------------------------------------------------------------------------------------------------[*]
+#define INFORM_BASE     0x0800
+#define INFORM_OFFSET   0x0004
+#define INFORM_REG_CNT  8
+
+static  DEVICE_ATTR(inform0, S_IRWXUGO, show_inform, set_inform);
+static  DEVICE_ATTR(inform2, S_IRWXUGO, show_inform, set_inform);
+static  DEVICE_ATTR(inform5, S_IRWXUGO, show_inform, set_inform);
+static  DEVICE_ATTR(inform6, S_IRWXUGO, show_inform, set_inform);
+static  DEVICE_ATTR(inform7, S_IRWXUGO, show_inform, set_inform);
 //[*]--------------------------------------------------------------------------------------------------[*]
 static struct attribute *odroid_sysfs_entries[] = {
 	&dev_attr_wifi_enable.attr,
@@ -254,13 +287,21 @@ static struct attribute *odroid_sysfs_entries[] = {
 	&dev_attr_led_blue.attr,
 
 	&dev_attr_hdmi_state.attr,
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)||defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 	&dev_attr_hdmi_resolution.attr,
+	&dev_attr_vout_mode.attr,
+	&dev_attr_led_blink.attr,
 #endif
 	&dev_attr_poweroff_trigger.attr,
+	&dev_attr_boot_mode.attr,
 #endif	
 
+    &dev_attr_inform0.attr,     // value clear xreset signal (used bootloader to kernel)
+    &dev_attr_inform2.attr,     // value clear xreset signal (used bootloader to kernel)
+    &dev_attr_inform5.attr,     // value clear power reset signal (used kernel to bootloader)
+    &dev_attr_inform6.attr,     // value clear power reset signal (used kernel to bootloader)
+    &dev_attr_inform7.attr,     // value clear power reset signal (used kernel to bootloader)
 	NULL
 };
 
@@ -268,6 +309,43 @@ static struct attribute_group odroid_sysfs_attr_group = {
 	.name   = NULL,
 	.attrs  = odroid_sysfs_entries,
 };
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+#define REG_INFORM0            (S5P_INFORM0)
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+static 	ssize_t show_inform0    (struct device *dev, struct device_attribute *attr, char *buf)
+{
+    return  sprintf(buf, "0x%08X\n", readl(REG_INFORM0));
+}
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+static 	ssize_t set_inform0     (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    unsigned int	val;
+
+    if(buf[0] == '0' && ((buf[1] == 'X') || (buf[1] == 'x')))
+        val = simple_strtol(buf, NULL, 16);
+    else
+        val = simple_strtol(buf, NULL, 10);
+
+    writel(val, REG_INFORM0);
+	
+	return  count;
+}
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+static	ssize_t show_boot_mode (struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int OM_STAT=0;
+	
+	OM_STAT = readl(EXYNOS4_OM_STAT);
+	
+	if(OM_STAT == BOOT_MMCSD) 	OM_STAT=1;
+	else 						OM_STAT=0;
+	
+	return	sprintf(buf, "%d\n", OM_STAT);
+}
 
 //[*]--------------------------------------------------------------------------------------------------[*]
 //[*]--------------------------------------------------------------------------------------------------[*]
@@ -289,6 +367,9 @@ static 	ssize_t show_gpio		(struct device *dev, struct device_attribute *attr, c
 #if defined(CONFIG_FB_S5P_S6E8AA1)
     extern void s6e8aa1_lcd_onoff  (unsigned char on);
 #endif
+#if defined(CONFIG_FB_S5P_S6EVR01)
+    extern void s6evr01_lcd_onoff  (unsigned char on);
+#endif
 
 static 	ssize_t set_gpio		(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
@@ -304,6 +385,10 @@ static 	ssize_t set_gpio		(struct device *dev, struct device_attribute *attr, co
             			if(!strcmp("power_3v3", attr->attr.name))
                             s6e8aa1_lcd_onoff  (((val != 0) ? 1 : 0));
                     #endif
+                    #if defined(CONFIG_FB_S5P_S6EVR01)
+            			if(!strcmp("power_3v3", attr->attr.name))
+                            s6evr01_lcd_onoff  (((val != 0) ? 1 : 0));
+                    #endif
     				gpio_set_value(sControlGpios[i].gpio, ((val != 0) ? 1 : 0));
 				}
 				else
@@ -318,7 +403,51 @@ static 	ssize_t set_gpio		(struct device *dev, struct device_attribute *attr, co
 }
 
 //[*]--------------------------------------------------------------------------------------------------[*]
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)||defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)
+static 	ssize_t show_inform		(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	int	    i;
+	char    name[7];
+
+	for (i = 0; i < INFORM_REG_CNT; i++) {
+	    
+	    memset(name, 0x00, sizeof(name));	    sprintf(name, "inform%d", i);
+	    
+	    if(!strncmp(attr->attr.name, name, sizeof(name)))    {
+	        return  sprintf(buf, "0x%08X\n", readl(EXYNOS_PMUREG(INFORM_BASE + i * INFORM_OFFSET)));
+	    }
+	}
+	
+	return	sprintf(buf, "ERROR! : Not found %s reg!\n", attr->attr.name);
+}
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+static 	ssize_t set_inform		(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    unsigned int	val, i;
+	char            name[7];
+
+    if(buf[0] == '0' && ((buf[1] == 'X') || (buf[1] == 'x')))
+        val = simple_strtol(buf, NULL, 16);
+    else
+        val = simple_strtol(buf, NULL, 10);
+
+	for (i = 0; i < INFORM_REG_CNT; i++) {
+	    
+	    memset(name, 0x00, sizeof(name));	    sprintf(name, "inform%d", i);
+	    
+	    if(!strncmp(attr->attr.name, name, sizeof(name)))    {
+	        writel(val, EXYNOS_PMUREG(INFORM_BASE + i * INFORM_OFFSET)); 
+		    return count;
+	    }
+	}
+
+	printk("ERROR! : Not found %s reg!\n", attr->attr.name);
+	return  count;
+}
+
+
+//[*]--------------------------------------------------------------------------------------------------[*]
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_Q)||defined(CONFIG_BOARD_ODROID_Q2)
 
 extern	void    odroid_keypad_trigger(unsigned int  press_time_sec);
 
@@ -333,13 +462,34 @@ static 	ssize_t set_poweroff_trigger    (struct device *dev, struct device_attri
     
     return 	count;
 }
+
 #endif
 
-#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
+
 static	ssize_t show_resolution (struct device *dev, struct device_attribute *attr, char *buf)
 {
 	return	sprintf(buf, "%d\n", odroid_get_hdmi_resolution() ? 1 : 0);
 }
+static	ssize_t show_vout_mode (struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return	sprintf(buf, "%d\n", odroid_get_vout_mode() ? 1 : 0);
+}
+
+extern	void    odroid_keypad_led_blink(unsigned int  time_sec);
+
+static 	ssize_t set_led_blink   (struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+    unsigned int	val;
+
+    if(!(sscanf(buf, "%d\n", &val))) 	return	-EINVAL;
+
+    // value : 0 ~ 255 (0 : OFF, 1 ~ 255 : Blink period)
+    if((val >= 0) && (val < 256))   odroid_keypad_led_blink(val);
+    
+    return 	count;
+}
+
 #endif
 //[*]--------------------------------------------------------------------------------------------------[*]
 extern	bool s5p_hpd_get_status(void);

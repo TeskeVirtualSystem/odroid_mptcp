@@ -913,7 +913,7 @@ static int set_machine_constraints(struct regulator_dev *rdev,
 			goto out;
 		}
 	}
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 	else    {
 	    if(ops->disable)    {
 	        ret = ops->disable(rdev);

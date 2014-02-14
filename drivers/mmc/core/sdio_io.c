@@ -23,8 +23,20 @@
  *	Claim a bus for a set of operations. The SDIO function given
  *	is used to figure out which bus is relevant.
  */
+#include <linux/delay.h>
+
 void sdio_claim_host(struct sdio_func *func)
 {
+    unsigned char   i = 0;
+    
+    while(1)    {
+        if      (!func)         msleep(100);
+        else if (!func->card)   msleep(100);
+        else                    break;
+        
+        if(i++ > 200)   break;
+    }
+    
 	BUG_ON(!func);
 	BUG_ON(!func->card);
 

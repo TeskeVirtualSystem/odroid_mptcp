@@ -15,10 +15,18 @@
 
 #include <mach/map.h>
 
+#define EXYNOS_OM_STAT			EXYNOS_PMUREG(0x0000)
+
+#define EXYNOS_PMUREG(x)			(S5P_VA_PMU + (x))
+
+
 #define S5P_PMUREG(x)				(S5P_VA_PMU + (x))
 
 #include "regs-pmu-4210.h"
 #include "regs-pmu-4212.h"
+
+#define EXYNOS4_OM_STAT				S5P_PMUREG(0x0000)
+#define BOOT_MMCSD					0x5
 
 #define S5P_CENTRAL_SEQ_CONFIGURATION		S5P_PMUREG(0x0200)
 

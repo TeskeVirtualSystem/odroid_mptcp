@@ -66,5 +66,6 @@ obj-$(CONFIG_TOUCHSCREEN_W90X900)	+= w90p910_ts.o
 obj-$(CONFIG_TOUCHSCREEN_TPS6507X)	+= tps6507x-ts.o
 # for ODROID-Q
 obj-$(CONFIG_TOUCHSCREEN_SOLOMON_MT)	+= touch.o touch-i2c.o touch-sysfs.o odroidq-touch.o
+obj-$(CONFIG_TOUCHSCREEN_SOLOMON_MCP_MT)	+= touch.o touch-i2c.o touch-sysfs.o mcp_solomon-touch.o
 obj-$(CONFIG_TOUCHSCREEN_DUMMY)			+= touch.o touch-i2c.o touch-sysfs.o 
 obj-$(CONFIG_TOUCHSCREEN_NEXIO_USB)	    += nexio_usb_touch.o

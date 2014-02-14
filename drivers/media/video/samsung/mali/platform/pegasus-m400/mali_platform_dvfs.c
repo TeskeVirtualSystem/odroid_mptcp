@@ -77,10 +77,7 @@ mali_dvfs_step step[MALI_DVFS_STEPS]={
 #if (MALI_DVFS_STEPS > 3)
 	/*step 3 clk*/ {440,  1025000},
 #if (MALI_DVFS_STEPS > 4)
-	/*step 4 clk*/ {533,  1075000},
-#endif
-#endif
-#endif
+	/*step 4 clk*/ {533,  1075000}
 #endif
 #endif
 #endif
@@ -345,7 +342,7 @@ static mali_bool set_mali_dvfs_status(u32 step,mali_bool boostup)
 	maliDvfsStatus.pCurrentDvfs = &mali_dvfs[validatedStep];
 
 	/* lock/unlock CPU freq by Mali */
-	/* if ((mali_dvfs[step].clock == 533) || (mali_dvfs[step].clock == 440))
+	if ((mali_dvfs[step].clock == 533) || (mali_dvfs[step].clock == 440))
 		#if defined(CONFIG_EXYNOS4X12_1800MHZ_SUPPORT)
 		err = cpufreq_lock_by_mali(1800);
 		#elif defined(CONFIG_EXYNOS4X12_1600MHZ_SUPPORT)
@@ -358,7 +355,7 @@ static mali_bool set_mali_dvfs_status(u32 step,mali_bool boostup)
 		err = cpufreq_lock_by_mali(1200);
 		#endif
 	else
-		cpufreq_unlock_by_mali(); */
+		cpufreq_unlock_by_mali();
 
 	return MALI_TRUE;
 }
@@ -774,7 +771,7 @@ int change_dvfs_tableset(int change_clk, int change_step)
 
 		/* lock/unlock CPU freq by Mali */
 
-		/* if ((mali_dvfs[change_step].clock == 533) || (mali_dvfs[change_step].clock == 440))
+		if ((mali_dvfs[change_step].clock == 533) || (mali_dvfs[change_step].clock == 440))
 			#if defined(CONFIG_EXYNOS4X12_1800MHZ_SUPPORT)
 			err = cpufreq_lock_by_mali(1800);
 			#elif defined(CONFIG_EXYNOS4X12_1600MHZ_SUPPORT)
@@ -787,7 +784,7 @@ int change_dvfs_tableset(int change_clk, int change_step)
 			err = cpufreq_lock_by_mali(1200);
 			#endif
 		else
-			cpufreq_unlock_by_mali(); */
+			cpufreq_unlock_by_mali();
 	}
 
 	return mali_dvfs[change_step].clock;

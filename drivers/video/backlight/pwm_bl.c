@@ -70,6 +70,13 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
 		temp = (brightness * 50 / 100);
 		brightness = temp * pb->period / max;
     #endif
+
+    #if defined(CONFIG_FB_S5P_EJ70NA01C)
+		int temp = 0;
+		temp = (brightness * 100 / 100);  
+		brightness = temp * pb->period / max;
+    #endif
+    
 #endif		
 		pwm_config(pb->pwm, brightness, pb->period);
 		pwm_enable(pb->pwm);

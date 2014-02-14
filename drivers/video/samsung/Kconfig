@@ -141,6 +141,13 @@ config FB_S5P_S6E8AA1
 	---help---
 	  This enables support for SMD S6E8AA1 MIPI LCD
 
+config FB_S5P_S6EVR01
+	bool "SMD S6EVR01 MIPI LCD"
+	depends on FB_S5P_MIPI_DSIM
+	---help---
+	  This enables support for SMD S6E8AA1 MIPI LCD
+
+
 config FB_S5P_LTN101AL03
 	bool "LTN101AL03"
 	depends on MACH_ODROID_4X12
@@ -165,6 +172,12 @@ config FB_S5P_FAKE_FB
 	help
 	  This enables support for odroid-u virtual panel
     
+config FB_S5P_EJ70NA01C
+	bool "EJ70NA01C"
+	depends on MACH_ODROID_4X12
+	help
+	  This enables support for 7.0" 1024*600 LCD panel
+
 endchoice
 
 config FB_S5P_V2

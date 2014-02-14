@@ -25,6 +25,9 @@
 #define USB3503_VERSION  "1.0.0"
 #define USB3503_NAME "usb3503"
 
+// over-current sense disable flag
+#define DISABLE_OVER_CURRENT_SENSE
+
 extern int s5p_ehci_port_power_on(struct platform_device *pdev);
 extern int s5p_ohci_port_power_on(struct platform_device *pdev);
 
@@ -62,7 +65,7 @@ static int usb3503_hw_init(struct usb3503_chip *chip)
 	/* Start */
 	gpio_direction_output(chip->pdata->gpio_reset, 0);
 	mdelay(1);
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 	/* RefCLK 24MHz */
 	gpio_direction_output(chip->pdata->irq_gpio, 0); 
 #else
@@ -89,29 +92,33 @@ static int usb3503_hw_init(struct usb3503_chip *chip)
 	i2c_smbus_write_byte_data(client, USB3503_DIDL, 0xA0); 
 	i2c_smbus_write_byte_data(client, USB3503_DIDM, 0xA1); 
 
+#if defined(CONFIG_BOARD_ODROID_U) && defined(DISABLE_OVER_CURRENT_SENSE) // disable over-current sense
+	i2c_smbus_write_byte_data(client, USB3503_CFG1, 0x86); 
+#else	
 	i2c_smbus_write_byte_data(client, USB3503_CFG1, 0x80); 
+#endif	
 	i2c_smbus_write_byte_data(client, USB3503_CFG2, 0x28); 
 	i2c_smbus_write_byte_data(client, USB3503_CFG3, 0x03); 
 
-	i2c_smbus_write_byte_data(client, USB3503_NRD, 	0x04); 
-//	i2c_smbus_write_byte_data(client, USB3503_PDS, 	0x00); 
-//	i2c_smbus_write_byte_data(client, USB3503_PDB, 	0x0E); 
+	i2c_smbus_write_byte_data(client, USB3503_NRD, 	0x00); 
+	i2c_smbus_write_byte_data(client, USB3503_PDS, 	0x00); 
+	i2c_smbus_write_byte_data(client, USB3503_PDB, 	0x00); 
 
 //	i2c_smbus_write_byte_data(client, USB3503_MAXPS, 	0xFA); 
 //	i2c_smbus_write_byte_data(client, USB3503_MAXPB, 	0x00); 
 //	i2c_smbus_write_byte_data(client, USB3503_HCMCS, 	0x32); 
 //	i2c_smbus_write_byte_data(client, USB3503_HCMCB, 	0x00); 
-//	i2c_smbus_write_byte_data(client, USB3503_PWRT, 	0x00); 
+//	i2c_smbus_write_byte_data(client, USB3503_PWRT, 	0x05); 
 
 //	i2c_smbus_write_byte_data(client, USB3503_LANGIDH, 	0x04); 
 //	i2c_smbus_write_byte_data(client, USB3503_LANGIDL, 	0x09); 
 
-//	i2c_smbus_write_byte_data(client, USB3503_OCS, 		0x00); 
+	i2c_smbus_write_byte_data(client, USB3503_OCS, 		0x00); 
 
-	i2c_smbus_write_byte_data(client, USB3503_VSNSUP3, 0x06); 
-	i2c_smbus_write_byte_data(client, USB3503_VSNS21, 0x66); 
-	i2c_smbus_write_byte_data(client, USB3503_BSTUP3, 0x06); 
-	i2c_smbus_write_byte_data(client, USB3503_BST21, 0x66); 
+//	i2c_smbus_write_byte_data(client, USB3503_VSNSUP3, 0x06); 
+//	i2c_smbus_write_byte_data(client, USB3503_VSNS21, 0x66); 
+//	i2c_smbus_write_byte_data(client, USB3503_BSTUP3, 0x06); 
+//	i2c_smbus_write_byte_data(client, USB3503_BST21, 0x66); 
 
 //	i2c_smbus_write_byte_data(client, USB3503_PRTSP, 	0x02); 
 
@@ -129,7 +136,12 @@ static int usb3503_hw_init(struct usb3503_chip *chip)
 	gpio_set_value(chip->pdata->gpio_hub_con, 1);
 	mdelay(10);
 
+#if defined(CONFIG_BOARD_ODROID_U) && defined(DISABLE_OVER_CURRENT_SENSE) // disable over-current sense
+    val &= 0x0F;
+#endif	
 	i2c_smbus_write_byte_data(client, USB3503_SP_ILOCK, val|0x01); //Device will remain Hub Mode, PRTPWR Output
+	
+printk("------------------------------------> val = 0x%02X\n", val);	
 
 	gpio_direction_input(chip->pdata->irq_gpio);
 	gpio_free(chip->pdata->gpio_hub_con);

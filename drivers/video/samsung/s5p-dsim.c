@@ -308,7 +308,7 @@ int s5p_dsim_rd_data(unsigned int reg_base, u8 addr, u16 count, u8 *buf)
 	u32 rxhd;
 	int j;
 
-	printk(KERN_INFO "%s called, count : %d\n", __func__, count);
+//	printk(KERN_INFO "%s called, count : %d\n", __func__, count);
 
 	if (dsim.mipi_ddi_pd->resume_complete == 0) {
 		printk(KERN_INFO "DSIM Status: SUSPEND\n");
@@ -347,7 +347,7 @@ int s5p_dsim_rd_data(unsigned int reg_base, u8 addr, u16 count, u8 *buf)
 	}
 
 	rxhd = readl(reg_base + S5P_DSIM_RXFIFO);
-	printk(KERN_INFO "rxhd : %x\n", rxhd);
+//	printk(KERN_INFO "rxhd : %x\n", rxhd);
 	if ((u8)(rxhd & 0xff) != response) {
 		printk(KERN_ERR "[DSIM:ERROR]:%s wrong response rxhd : %x, response:%x\n"
 		    , __func__, rxhd, response);
@@ -361,7 +361,7 @@ int s5p_dsim_rd_data(unsigned int reg_base, u8 addr, u16 count, u8 *buf)
 	} else {
 		/* for long packet */
 		rxsize = (u16)((rxhd & 0x00ffff00) >> 8);
-		printk(KERN_INFO "rcv size : %d\n", rxsize);
+//		printk(KERN_INFO "rcv size : %d\n", rxsize);
 		if (rxsize != count) {
 			printk(KERN_ERR "[DSIM:ERROR]:%s received data size mismatch received : %d, requested : %d\n",
 				__func__, rxsize, count);
@@ -370,7 +370,7 @@ int s5p_dsim_rd_data(unsigned int reg_base, u8 addr, u16 count, u8 *buf)
 
 		for (i = 0; i < rxsize>>2; i++) {
 			temp = readl(reg_base + S5P_DSIM_RXFIFO);
-			printk(KERN_INFO "pkt : %08x\n", temp);
+//			printk(KERN_INFO "pkt : %08x\n", temp);
 			for (j = 0; j < 4; j++) {
 				buf[(i*4)+j] = (u8)(temp>>(j*8))&0xff;
 				/* printk("Value : %02x\n",(temp>>(j*8))&0xff); */
@@ -378,7 +378,7 @@ int s5p_dsim_rd_data(unsigned int reg_base, u8 addr, u16 count, u8 *buf)
 		}
 		if (rxsize % 4) {
 			temp = readl(reg_base + S5P_DSIM_RXFIFO);
-			printk(KERN_INFO "pkt-l : %08x\n", temp);
+//			printk(KERN_INFO "pkt-l : %08x\n", temp);
 			for (j = 0; j < rxsize%4; j++) {
 				buf[(i*4)+j] = (u8)(temp>>(j*8))&0xff;
 				/* printk("Value : %02x\n",(temp>>(j*8))&0xff); */

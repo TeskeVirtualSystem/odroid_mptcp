@@ -162,7 +162,7 @@ static struct regulator_init_data max77686_buck7_data = {
 static struct regulator_init_data max77686_buck8_data = {
 	.constraints	= {
 		.name		= "BUCK8 3V0",
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 #else
@@ -173,7 +173,7 @@ static struct regulator_init_data max77686_buck8_data = {
 		.apply_uV	= 1,
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 			.uV	= 3300000,
 #else
 			.uV	= 3000000,
@@ -192,7 +192,7 @@ static struct regulator_init_data max77686_buck9_data = {
 		.name		= "BUCK9 1V2",
 		.min_uV		= 1200000,
 		.max_uV		= 1200000,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 		.always_on	= 0,
 #else
 		.always_on	= 1,
@@ -236,13 +236,13 @@ static struct regulator_init_data max77686_ldo1_data = {
 static struct regulator_init_data max77686_ldo2_data = {
 	.constraints	= {
 		.name		= "LDO2 VDDQ_M1_1V8",
-		.min_uV		= 1800000,
-		.max_uV		= 1800000,
+		.min_uV		= 1200000,
+		.max_uV		= 1200000,
 		.apply_uV	= 1,
 		.always_on	= 1,
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV		= 1800000,
+			.uV		= 1200000,
 			.enabled = 1,
 		},
 	},
@@ -385,7 +385,7 @@ static struct regulator_init_data max77686_ldo9_data = {
 		.min_uV		= 1000000,
 		.max_uV		= 1000000,
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,
@@ -574,7 +574,7 @@ static struct regulator_init_data max77686_ldo18_data = {
 		.min_uV		= 1800000,
 		.max_uV		= 1800000,
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,
@@ -621,7 +621,7 @@ static struct regulator_init_data max77686_ldo20_data = {
 		.name		= "LDO20 EMMC_IO_1V8",
 		.min_uV		= 1800000,
 		.max_uV		= 1800000,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,
@@ -661,7 +661,7 @@ static struct regulator_init_data max77686_ldo22_data = {
 		.min_uV		= 2800000,
 		.max_uV		= 2800000,
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
 		.always_on	= 1,
 #else		
 		.always_on	= 0,
@@ -669,7 +669,7 @@ static struct regulator_init_data max77686_ldo22_data = {
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
 			.uV		= 2800000,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
             .enabled = 1,
 #else			
 			.enabled = 0,
@@ -695,7 +695,7 @@ static struct regulator_init_data max77686_ldo23_data = {
 		.max_uV		= 2800000,
 #endif		
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,
@@ -726,12 +726,15 @@ static struct regulator_init_data max77686_ldo24_data = {
 #if defined(CONFIG_FB_S5P_S6E8AA1)
 		.min_uV		= 2200000,
 		.max_uV		= 2200000,
+#elif defined(CONFIG_FB_S5P_S6EVR01)
+		.min_uV		= 3000000,
+		.max_uV		= 3000000,
 #else
 		.min_uV		= 3300000,
 		.max_uV		= 3300000,
 #endif		
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,
@@ -740,6 +743,8 @@ static struct regulator_init_data max77686_ldo24_data = {
 		.state_mem	= {
 #if defined(CONFIG_FB_S5P_S6E8AA1)
 			.uV		= 2200000,
+#elif defined(CONFIG_FB_S5P_S6EVR01)
+			.uV		= 3000000,
 #else
 			.uV		= 3300000,
 #endif			
@@ -794,7 +799,7 @@ static struct regulator_init_data max77686_ldo26_data = {
 		.min_uV		= 3000000,
 		.max_uV		= 3000000,
 		.apply_uV	= 1,
-#if defined(CONFIG_BOARD_ODROID_U)||defined(CONFIG_BOARD_ODROID_U2)
+#if defined(CONFIG_BOARD_ODROID_U)
         .always_on  = 0,
 #else
 		.always_on	= 1,

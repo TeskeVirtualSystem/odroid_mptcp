@@ -596,6 +596,19 @@ static void mt_remove(struct hid_device *hdev)
 
 static const struct hid_device_id mt_devices[] = {
 
+    /* Elitegroup Computer Systems */
+    { .driver_data = MT_CLS_DEFAULT,
+    	HID_USB_DEVICE(USB_VENDOR_ID_ELITEGROUP, 
+    	    USB_DEVICE_ID_ELITEGROUP_TOUCH) },
+
+    /* Nexio Co., Ltd */
+    { .driver_data = MT_CLS_DEFAULT,
+    	HID_USB_DEVICE(USB_VENDOR_ID_NEXIO, 
+    	    USB_DEVICE_ID_NEXIO_TOUCH) },
+    { .driver_data = MT_CLS_DEFAULT,
+    	HID_USB_DEVICE(USB_VENDOR_ID_NEXIO, 
+    	    USB_DEVICE_ID_NEXIO_42TOUCH) },
+    
 	/* 3M panels */
 	{ .driver_data = MT_CLS_3M,
 		HID_USB_DEVICE(USB_VENDOR_ID_3M,

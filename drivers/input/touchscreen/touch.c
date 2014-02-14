@@ -314,6 +314,11 @@ static	void 	touch_input_close	(struct input_dev *input)
 }
 
 //[*]--------------------------------------------------------------------------------------------------[*]
+#if defined(CONFIG_TOUCHSCREEN_DUMMY) || defined(CONFIG_FB_S5P_U133WA01)
+    extern  unsigned short FrameBufferSizeX;
+    extern  unsigned short FrameBufferSizeY;
+#endif
+
 static	int		touch_check_functionality	(struct touch_pdata *pdata)
 {
 	if(!pdata)	{
@@ -349,6 +354,10 @@ static	int		touch_check_functionality	(struct touch_pdata *pdata)
 	if(!pdata->suspend)			pdata->suspend			= touch_suspend;
 #endif
 	
+#if defined(CONFIG_TOUCHSCREEN_DUMMY)
+    pdata->abs_max_x = FrameBufferSizeX;
+    pdata->abs_max_y = FrameBufferSizeY;
+#endif
 	return	0;
 }
 
@@ -435,6 +444,8 @@ int		touch_info_display	(struct touch *ts)
 	}
 	else	{
 		printk("TOUCH INPUT Name = %s\n", ts->pdata->name);
+		printk("TOUCH ABS X MAX = %d, TOUCH ABS X MIN = %d\n", ts->pdata->abs_max_x, ts->pdata->abs_min_x);
+		printk("TOUCH ABS Y MAX = %d, TOUCH ABS Y MIN = %d\n", ts->pdata->abs_max_y, ts->pdata->abs_min_y);
 		printk("Dummy Touchscreen driver!\n");
 	}
 

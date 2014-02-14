@@ -53,6 +53,11 @@ static int atoi(const char *str)
 static  unsigned char   FbBootArgsX[5], FbBootArgsY[5];
 static  unsigned char   SetEnableX = false, SetEnableY = false;
 
+unsigned short FrameBufferSizeX = 0;
+EXPORT_SYMBOL(FrameBufferSizeX);
+unsigned short FrameBufferSizeY = 0;
+EXPORT_SYMBOL(FrameBufferSizeY);
+
 static int __init lcd_x_res(char *line)
 {
     sprintf(FbBootArgsX, "%s", line);    SetEnableX = true;
@@ -80,5 +85,8 @@ void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 	printk("Registerd Fake FB Driver.\n");
 	printk("Fake FB res X = %d\n", fake_fb.width);
 	printk("Fake FB res Y = %d\n", fake_fb.height);
+
+	FrameBufferSizeX = fake_fb.width;
+	FrameBufferSizeY = fake_fb.height;
 }
 

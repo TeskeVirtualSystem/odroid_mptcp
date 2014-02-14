@@ -31,6 +31,12 @@ config TOUCHSCREEN_SOLOMON_MT
 	---help---
 	  This enables support for ODROID-Q 10.1\" WXGA Touch panel (Multi-Touch)
 
+config TOUCHSCREEN_SOLOMON_MCP_MT
+	bool "Solomon 7.0\" multi touch panel(I2C Driver)"
+	default n
+	---help---
+	  This enables support for MCP 1024 X 600 7.0\" Touch panel (Multi-Touch)
+
 config TOUCHSCREEN_88PM860X
 	tristate "Marvell 88PM860x touchscreen"
 	depends on MFD_88PM860X

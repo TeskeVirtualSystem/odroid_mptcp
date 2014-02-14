@@ -39,8 +39,6 @@
 #define HDMI_ON		1
 #define HDMI_OFF	0
 
-#define RETRY_COUNT	50
-
 //codewalker
 //struct switch_dev switch_hdmi_detection = {
 //	.name = "hdmi",
@@ -95,30 +93,10 @@ static void s5p_hpd_kobject_uevent(void)
 	char env_buf[120];
 	char *envp[2];
 	int env_offset = 0;
-	int i = 0;
 	int hpd_state = atomic_read(&hpd_struct.state);
 
 	HPDIFPRINTK("++\n");
 	memset(env_buf, 0, sizeof(env_buf));
-
-	if (hpd_state)	{
-		while (on_stop_process && (i < RETRY_COUNT)) {
-			HPDIFPRINTK("on_stop_process\n");
-			msleep(5);
-			i++;
-		};
-	} else {
-		while (on_start_process && (i < RETRY_COUNT)) {
-			HPDIFPRINTK("on_start_process\n");
-			msleep(5);
-			i++;
-		};
-	}
-
-	if (i == RETRY_COUNT) {
-		on_stop_process = false;
-		on_start_process = false;
-	}
 
 	hpd_state = atomic_read(&hpd_struct.state);
 	if (hpd_state) {
@@ -252,7 +230,7 @@ int s5p_hpd_set_hdmiint(void)
 	/* EINT -> HDMI */
 
 	HPDIFPRINTK("\n");
-	irq_set_irq_type(hpd_struct.irq_n, IRQ_TYPE_NONE);
+//	irq_set_irq_type(hpd_struct.irq_n, IRQ_TYPE_NONE);
 
 	if (last_hpd_state)
 		s5p_hdmi_reg_intc_enable(HDMI_IRQ_HPD_UNPLUG, 0);
