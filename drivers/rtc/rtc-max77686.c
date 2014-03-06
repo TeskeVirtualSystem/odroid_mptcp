@@ -45,7 +45,8 @@
 #define ALARM_ENABLE_SHIFT		7
 #define ALARM_ENABLE_MASK		(1 << ALARM_ENABLE_SHIFT)
 
-#define MAX77686_RTC_UPDATE_DELAY	16
+// #define MAX77686_RTC_UPDATE_DELAY	16
+#define MAX77686_RTC_UPDATE_DELAY	20
 #undef MAX77686_RTC_WTSR_SMPL
 
 enum {
@@ -501,6 +502,33 @@ static int max77686_rtc_init_reg(struct max77686_rtc_info *info)
 	return ret;
 }
 
+static void max77686_rtc_info_check(struct max77686_rtc_info *info)
+{
+	u8 data[2];
+
+rtc_check:
+	while(max77686_rtc_update(info, MAX77686_RTC_READ))    {
+	    dev_err(info->dev, "%s (%d): max77686_rtc_update(READ) error!\n", __func__, __LINE__);
+	    msleep(1000);
+	}
+
+    data[0] = data[1] = 0;
+
+	while(max77686_bulk_read(info->rtc, MAX77686_RTC_RTCCNTLM, 2, data))   {
+	    dev_err(info->dev, "%s (%d): max77686_bulk_read error!\n", __func__, __LINE__);
+	    msleep(1000);
+	}
+	
+    dev_err(info->dev, "%s (%d): RTCCNTLM = 0x%02X, RTCCNTL = 0x%02X\n", 
+                __func__, __LINE__, data[0], data[1]);
+	
+	if ((data[0] != 0x03) || (data[1] != 0x02)) {
+        dev_err(info->dev, "%s (%d): rtc control setting value error!\n", __func__, __LINE__);
+	    max77686_rtc_init_reg(info);
+	    goto    rtc_check;
+	}
+}
+
 static int __devinit max77686_rtc_probe(struct platform_device *pdev)
 {
 	struct max77686_dev *max77686 = dev_get_drvdata(pdev->dev.parent);
@@ -527,6 +555,9 @@ static int __devinit max77686_rtc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to initialize RTC reg:%d\n", ret);
 		goto err_rtc;
 	}
+
+    // rtc control register check
+    max77686_rtc_info_check(info);
 
 #ifdef MAX77686_RTC_WTSR_SMPL
 	max77686_rtc_enable_wtsr(info, true);
