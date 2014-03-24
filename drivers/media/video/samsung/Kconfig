@@ -17,8 +17,32 @@ if CPU_EXYNOS4210 || CPU_EXYNOS4212 || CPU_EXYNOS4412
 	source "drivers/media/video/samsung/fimc/Kconfig"
 	source "drivers/media/video/samsung/tvout/Kconfig"
 	source "drivers/media/video/samsung/mfc5x/Kconfig"
+
+choice
+	prompt "Android Version select"
+	default ANDROID_412
+
+config ANDROID_412
+	bool "ODROID support Android 4.1.2"
+	help 
+		using mali driver version r2
+
+config ANDROID_422
+	bool "ODROID support Android 4.2.2"
+	help 
+		using mali driver version r3p1
+endchoice
+
+if ANDROID_412
 	source "drivers/media/video/samsung/ump/Kconfig"
 	source "drivers/media/video/samsung/mali/Kconfig"
+endif
+
+if ANDROID_422
+	source "drivers/media/video/samsung/ump_r3p1/Kconfig"
+	source "drivers/media/video/samsung/mali_r3p1/Kconfig"
+endif
+
 endif
 
 config VIDEO_FIMG2D
