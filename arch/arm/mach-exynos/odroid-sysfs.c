@@ -150,6 +150,7 @@ EXPORT_SYMBOL(odroid_get_wifi_irqnum);
 #if defined(CONFIG_BOARD_ODROID_X)||defined(CONFIG_BOARD_ODROID_X2)||defined(CONFIG_BOARD_ODROID_U)
 static  unsigned char   HdmiBootArgs[5];
 static  unsigned char   VOutArgs[5];
+static  unsigned char   AInArgs[5];
 
 // Bootargs parsing
 static int __init hdmi_resolution_setup(char *line)
@@ -165,6 +166,13 @@ static int __init vout_mode_setup(char *line)
     return  0;
 }
 __setup("v_out=", vout_mode_setup);
+
+static int __init audio_in_setup(char *line)
+{
+    sprintf(AInArgs, "%s", line);
+    return  0;
+}
+__setup("audio_in=", audio_in_setup);
 
 int odroid_get_hdmi_resolution  (void)
 {
@@ -182,6 +190,15 @@ int odroid_get_vout_mode  (void)
 	else 								return   0;
 }
 EXPORT_SYMBOL(odroid_get_vout_mode);
+
+int odroid_get_audio_in(void)
+{
+    // Bootarg setup dvi
+    if(!strncmp("dmic", AInArgs, 4))   	return   1;
+	else 								return   0;
+}
+EXPORT_SYMBOL(odroid_get_audio_in);
+
 
 #endif
 //[*]--------------------------------------------------------------------------------------------------[*]
