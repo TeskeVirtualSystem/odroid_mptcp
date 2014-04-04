@@ -871,6 +871,11 @@ static void mt_remove(struct hid_device *hdev)
 
 static const struct hid_device_id mt_devices[] = {
 
+    /* Focaltech System FT5926 Multitouch(Hardkernel 9" Touch Screen) */
+    { .driver_data = MT_CLS_DEFAULT,
+    	HID_USB_DEVICE(USB_VENDOR_ID_FOCALTECH, 
+    	    USB_VENDOR_ID_FOCALTECH_TOUCH) },
+
     /* Elitegroup Computer Systems */
     { .driver_data = MT_CLS_DEFAULT,
     	HID_USB_DEVICE(USB_VENDOR_ID_ELITEGROUP, 
