@@ -240,10 +240,10 @@ UKKFILES += \
 endif
 
 mali-y := \
-	common/mali_kernel_core.o \
-	linux/mali_kernel_linux.o \
-	common/mali_kernel_descriptor_mapping.o \
-	common/mali_session.o \
+	$(KBUILDROOT)common/mali_kernel_core.o \
+	$(KBUILDROOT)linux/mali_kernel_linux.o \
+	$(KBUILDROOT)common/mali_kernel_descriptor_mapping.o \
+	$(KBUILDROOT)common/mali_session.o \
 	common/mali_device_pause_resume.o \
 	common/mali_kernel_vsync.o \
 	linux/mali_ukk_vsync.o \
@@ -327,7 +327,8 @@ ifeq ($(PANIC_ON_WATCHDOG_TIMEOUT),1)
 endif
 
 # Get subversion revision number, fall back to 0000 if no svn info is available
-SVN_REV:=$(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
+# SVN_REV:=$(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
+SVN_REV:=0000
 
 EXTRA_CFLAGS += -DSVN_REV=$(SVN_REV)
 EXTRA_CFLAGS += -DSVN_REV_STRING=\"$(SVN_REV)\"
