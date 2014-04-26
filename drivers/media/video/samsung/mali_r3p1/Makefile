@@ -240,10 +240,10 @@ UKKFILES += \
 endif
 
 mali-y := \
-	$(KBUILDROOT)common/mali_kernel_core.o \
-	$(KBUILDROOT)linux/mali_kernel_linux.o \
-	$(KBUILDROOT)common/mali_kernel_descriptor_mapping.o \
-	$(KBUILDROOT)common/mali_session.o \
+	common/mali_kernel_core.o \
+	linux/mali_kernel_linux.o \
+	common/mali_kernel_descriptor_mapping.o \
+	common/mali_session.o \
 	common/mali_device_pause_resume.o \
 	common/mali_kernel_vsync.o \
 	linux/mali_ukk_vsync.o \
