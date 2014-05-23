@@ -39,6 +39,7 @@
 
 static DEFINE_MUTEX(tmu_lock);
 
+unsigned long cur_temperature;
 unsigned int already_limit;
 unsigned int auto_refresh_changed;
 static struct workqueue_struct  *tmu_monitor_wq;
@@ -400,21 +401,23 @@ static void print_temperature_params(struct tmu_info *info)
 #endif
 }
 
-#ifdef CONFIG_TMU_DEBUG
 static void cur_temp_monitor(struct work_struct *work)
 {
-	int cur_temp;
 	struct delayed_work *delayed_work = to_delayed_work(work);
 	struct tmu_info *info =
 		 container_of(delayed_work, struct tmu_info, monitor);
 
-	cur_temp = get_cur_temp(info);
-	pr_info("current temp = %d\n", cur_temp);
+	cur_temperature = get_cur_temp(info);
+	
 	queue_delayed_work_on(0, tmu_monitor_wq,
 			&info->monitor, info->sampling_rate);
 }
-#endif
 
+unsigned long exynos_thermal_get_value(void)
+{
+	return cur_temperature;
+}
+EXPORT_SYMBOL(exynos_thermal_get_value);
 
 unsigned int get_refresh_interval(unsigned int freq_ref,
 					unsigned int refresh_nsec)
@@ -535,11 +538,10 @@ static void tmu_monitor(struct work_struct *work)
 	int cur_temp;
 
 	cur_temp = get_cur_temp(info);
-#ifdef CONFIG_TMU_DEBUG
 	cancel_delayed_work(&info->monitor);
 	pr_info("Current: %dc, FLAG=%d\n",
 			cur_temp, info->tmu_state);
-#endif
+
 	mutex_lock(&tmu_lock);
 	switch (info->tmu_state) {
 #if defined(CONFIG_TC_VOLTAGE)
@@ -558,10 +560,8 @@ static void tmu_monitor(struct work_struct *work)
 		break;
 #endif
 	case TMU_STATUS_NORMAL:
-#ifdef CONFIG_TMU_DEBUG
 		queue_delayed_work_on(0, tmu_monitor_wq,
 				&info->monitor, info->sampling_rate);
-#endif
 		__raw_writel((CLEAR_RISE_INT|CLEAR_FALL_INT),
 					info->tmu_base + INTCLEAR);
 		enable_irq(info->irq);
@@ -1051,9 +1051,7 @@ static int __devinit tmu_probe(struct platform_device *pdev)
 	
 	INIT_DELAYED_WORK_DEFERRABLE(&info->polling, tmu_monitor);
 	pr_emerg("TMU: Work Created\n");
-#ifdef CONFIG_TMU_DEBUG
 	INIT_DELAYED_WORK_DEFERRABLE(&info->monitor, cur_temp_monitor);
-#endif
 
 	print_temperature_params(info);
 	pr_emerg("TMU: Printed Parameters\n");
@@ -1062,10 +1060,8 @@ static int __devinit tmu_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto err_noinit;
 
-#ifdef CONFIG_TMU_DEBUG
 	queue_delayed_work_on(0, tmu_monitor_wq,
 			&info->monitor, info->sampling_rate);
-#endif
 	pr_info("Tmu Initialization is sucessful...!\n");
 	return ret;
 
