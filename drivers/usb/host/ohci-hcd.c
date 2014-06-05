@@ -898,6 +898,7 @@ static void ohci_stop (struct usb_hcd *hcd)
 
 	ohci_writel (ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
 	ohci_usb_reset (ohci);
+	
 	// flush those writes
 	(void) ohci_readl (ohci, &ohci->regs->intrdisable);
 	free_irq(hcd->irq, hcd);

@@ -31,18 +31,6 @@
 
 static const char switch_name[] = "exynos_usb_switch";
 
-#if defined(CONFIG_BATTERY_SAMSUNG)
-void exynos_usb_cable_connect(void)
-{
-	samsung_cable_check_status(1);
-}
-
-void exynos_usb_cable_disconnect(void)
-{
-	samsung_cable_check_status(0);
-}
-#endif
-
 static void exynos_host_port_power_off(void)
 {
 	s5p_ehci_port_power_off(&s5p_device_ehci);
@@ -119,15 +107,9 @@ static int exynos_change_usb_mode(struct exynos_usb_switch *usb_switch,
 			set_host_vbus(usb_switch, 0);
 
 		enable_irq(usb_switch->device_detect_irq);
-#if defined(CONFIG_BATTERY_SAMSUNG)
-		exynos_usb_cable_disconnect();
-#endif
 		atomic_set(&usb_switch->connect, 0);
 		break;
 	case USB_HOST_ATTACHED:
-#if defined(CONFIG_BATTERY_SAMSUNG)
-		exynos_usb_cable_connect();
-#endif
 		disable_irq(usb_switch->device_detect_irq);
 		if (usb_switch->gpio_host_vbus)
 			set_host_vbus(usb_switch, 1);
@@ -139,7 +121,7 @@ static int exynos_change_usb_mode(struct exynos_usb_switch *usb_switch,
 	default:
 		printk(KERN_ERR "Does not changed\n");
 	}
-	printk(KERN_INFO "usb cable = %d\n", mode);
+	printk(KERN_DEBUG "usb cable = %d\n", mode);
 
 	return ret;
 }

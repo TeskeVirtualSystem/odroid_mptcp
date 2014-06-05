@@ -67,10 +67,47 @@ EXPORT_SYMBOL_GPL(s5p_ehci_port_power_on);
 
 static int s5p_ehci_configurate(struct usb_hcd *hcd)
 {
-	/* DMA burst Enable */
+	int delay_count = 0;
+
+	/* This is for waiting phy before ehci configuration */
+	do {
+		if (readl(hcd->regs))
+			break;
+		udelay(1);
+		++delay_count;
+	} while (delay_count < 200);
+	if (delay_count)
+		dev_info(hcd->self.controller, "phy delay count = %d\n",
+			delay_count);
+
+	/* DMA burst Enable, set utmi suspend_on_n */
 	writel(readl(INSNREG00(hcd->regs)) | ENA_DMA_INCR,
 			INSNREG00(hcd->regs));
 	return 0;
+}
+
+
+static void s5p_ehci_phy_init(struct platform_device *pdev)
+{
+	struct s5p_ehci_platdata *pdata = pdev->dev.platform_data;
+	struct s5p_ehci_hcd *s5p_ehci = platform_get_drvdata(pdev);
+	struct usb_hcd *hcd = s5p_ehci->hcd;
+	u32 delay_count = 0;
+
+	if (pdata && pdata->phy_init) {
+		pdata->phy_init(pdev, S5P_USB_PHY_HOST);
+
+		while (!readl(hcd->regs) && delay_count < 200) {
+			delay_count++;
+			udelay(1);
+		}
+		if (delay_count)
+			dev_info(&pdev->dev, "waiting time = %d\n",
+				delay_count);
+		s5p_ehci_configurate(hcd);
+		dev_dbg(&pdev->dev, "%s : 0x%x\n", __func__,
+				readl(INSNREG00(hcd->regs)));
+	}
 }
 
 #ifdef CONFIG_PM
@@ -118,7 +155,6 @@ static int s5p_ehci_suspend(struct device *dev)
 static int s5p_ehci_resume(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
-	struct s5p_ehci_platdata *pdata = pdev->dev.platform_data;
 	struct s5p_ehci_hcd *s5p_ehci = platform_get_drvdata(pdev);
 	struct usb_hcd *hcd = s5p_ehci->hcd;
 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
@@ -126,13 +162,16 @@ static int s5p_ehci_resume(struct device *dev)
 	clk_enable(s5p_ehci->clk);
 	pm_runtime_resume(&pdev->dev);
 
-	if (pdata->phy_init)
-		pdata->phy_init(pdev, S5P_USB_PHY_HOST);
+	s5p_ehci_phy_init(pdev);
 
-	s5p_ehci_configurate(hcd);
+	/* if EHCI was off, hcd was removed */
+	if (!s5p_ehci->power_on) {
+		dev_info(dev, "Nothing to do for the device (power off)\n");
+		return 0;
+	}
 
 	if (time_before(jiffies, ehci->next_statechange))
-		msleep(10);
+		usleep_range(10000, 11000);
 
 	/* Mark hardware accessible again as we are out of D3 state by now */
 	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
@@ -170,9 +209,17 @@ static int s5p_ehci_resume(struct device *dev)
 	return 0;
 }
 
+int s5p_ehci_bus_resume(struct usb_hcd *hcd)
+{
+	/* When suspend is failed, re-enable clocks & PHY */
+	pm_runtime_resume(hcd->self.controller);
+
+	return ehci_bus_resume(hcd);
+}
 #else
 #define s5p_ehci_suspend	NULL
 #define s5p_ehci_resume		NULL
+#define s5p_ehci_bus_resume	NULL
 #endif
 
 #ifdef CONFIG_USB_SUSPEND
@@ -180,26 +227,14 @@ static int s5p_ehci_runtime_suspend(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct s5p_ehci_platdata *pdata = pdev->dev.platform_data;
-#ifdef CONFIG_USB_EXYNOS_SWITCH
-	struct s5p_ehci_hcd *s5p_ehci = platform_get_drvdata(pdev);
-	struct usb_hcd *hcd = s5p_ehci->hcd;
-	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
-#endif
+
 	if (pdata && pdata->phy_suspend)
 		pdata->phy_suspend(pdev, S5P_USB_PHY_HOST);
 
-#ifdef CONFIG_USB_EXYNOS_SWITCH
-	if (samsung_board_rev_is_0_0()) {
-		ehci_hub_control(hcd,
-			ClearPortFeature,
-			USB_PORT_FEAT_POWER,
-			1, NULL, 0);
-		/* Flush those writes */
-		ehci_readl(ehci, &ehci->regs->command);
+	pr_info("%s: usage=%d, child=%d\n", __func__,
+					atomic_read(&dev->power.usage_count),
+					atomic_read(&dev->power.child_count));
 
-		msleep(20);
-	}
-#endif
 	return 0;
 }
 
@@ -239,18 +274,6 @@ static int s5p_ehci_runtime_resume(struct device *dev)
 		ehci_port_power(ehci, 1);
 
 		hcd->state = HC_STATE_SUSPENDED;
-#ifdef CONFIG_USB_EXYNOS_SWITCH
-	} else {
-		if (samsung_board_rev_is_0_0()) {
-			ehci_hub_control(ehci_to_hcd(ehci),
-					SetPortFeature,
-					USB_PORT_FEAT_POWER,
-					1, NULL, 0);
-			/* Flush those writes */
-			ehci_readl(ehci, &ehci->regs->command);
-			msleep(20);
-		}
-#endif
 	}
 
 	return 0;
@@ -282,8 +305,8 @@ static const struct hc_driver s5p_ehci_hc_driver = {
 
 	.hub_status_data	= ehci_hub_status_data,
 	.hub_control		= ehci_hub_control,
+	.bus_resume		= s5p_ehci_bus_resume,
 	.bus_suspend		= ehci_bus_suspend,
-	.bus_resume		= ehci_bus_resume,
 
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
@@ -318,9 +341,9 @@ static ssize_t store_ehci_power(struct device *dev,
 
 	device_lock(dev);
 
-	pm_runtime_get_sync(dev);
 	if (!power_on && s5p_ehci->power_on) {
 		printk(KERN_DEBUG "%s: EHCI turns off\n", __func__);
+		pm_runtime_forbid(dev);
 		s5p_ehci->power_on = 0;
 		usb_remove_hcd(hcd);
 
@@ -329,12 +352,10 @@ static ssize_t store_ehci_power(struct device *dev,
 	} else if (power_on) {
 		printk(KERN_DEBUG "%s: EHCI turns on\n", __func__);
 		if (s5p_ehci->power_on) {
+			pm_runtime_forbid(dev);
 			usb_remove_hcd(hcd);
-		}
-
-		if (pdata && pdata->phy_init)
-			pdata->phy_init(pdev, S5P_USB_PHY_HOST);
-		s5p_ehci_configurate(hcd);
+		} else
+			s5p_ehci_phy_init(pdev);
 
 		irq = platform_get_irq(pdev, 0);
 		retval = usb_add_hcd(hcd, irq,
@@ -345,9 +366,9 @@ static ssize_t store_ehci_power(struct device *dev,
 		}
 
 		s5p_ehci->power_on = 1;
+		pm_runtime_allow(dev);
 	}
 exit:
-	pm_runtime_put_sync(dev);
 	device_unlock(dev);
 	return count;
 }
@@ -431,15 +452,14 @@ static int __devinit s5p_ehci_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
-	if (pdata->phy_init)
-		pdata->phy_init(pdev, S5P_USB_PHY_HOST);
+	platform_set_drvdata(pdev, s5p_ehci);
+
+	s5p_ehci_phy_init(pdev);
 
 	ehci = hcd_to_ehci(hcd);
 	ehci->caps = hcd->regs;
 	ehci->regs = hcd->regs +
 		HC_LENGTH(ehci, readl(&ehci->caps->hc_capbase));
-
-	s5p_ehci_configurate(hcd);
 
 	dbg_hcs_params(ehci, "reset");
 	dbg_hcc_params(ehci, "reset");
@@ -453,18 +473,9 @@ static int __devinit s5p_ehci_probe(struct platform_device *pdev)
 		goto fail;
 	}
 
-	platform_set_drvdata(pdev, s5p_ehci);
-
 	create_ehci_sys_file(ehci);
 	s5p_ehci->power_on = 1;
 
-#ifdef CONFIG_USB_EXYNOS_SWITCH
-	if (samsung_board_rev_is_0_0())
-		ehci_hub_control(ehci_to_hcd(ehci),
-				ClearPortFeature,
-				USB_PORT_FEAT_POWER,
-				1, NULL, 0);
-#endif
 #ifdef CONFIG_USB_SUSPEND
 	pm_runtime_set_active(&pdev->dev);
 	pm_runtime_enable(&pdev->dev);
@@ -490,6 +501,11 @@ static int __devexit s5p_ehci_remove(struct platform_device *pdev)
 	struct s5p_ehci_hcd *s5p_ehci = platform_get_drvdata(pdev);
 	struct usb_hcd *hcd = s5p_ehci->hcd;
 
+/* pm_runtime_disable called twice during pdev unregistering
+ * it causes disable_depth mismatching, so rpm for this device
+ * cannot works from disable_depth count
+ * replace it to runtime forbid.
+ */
 #ifdef CONFIG_USB_SUSPEND
 	pm_runtime_disable(&pdev->dev);
 #endif

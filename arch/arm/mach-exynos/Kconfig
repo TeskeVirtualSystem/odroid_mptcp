@@ -727,6 +727,7 @@ choice
 
 	config BOARD_ODROID_U
 		bool "ODROID_U ARM Quad-Core Ultra mini-PC"
+		select S5P_DEV_USB_SWITCH
 		help
 		  This enables support for ODROID_U(Quad-Core ARM PC)
 

@@ -1020,6 +1020,50 @@ static struct platform_device odroid_fan = {
 };
 #endif
 
+#ifdef CONFIG_USB_EXYNOS_SWITCH
+static struct s5p_usbswitch_platdata smdk4x12_usbswitch_pdata;
+
+static void __init smdk4x12_usbswitch_init(void)
+{
+	struct s5p_usbswitch_platdata *pdata = &smdk4x12_usbswitch_pdata;
+	int err;
+
+	pdata->gpio_host_detect = EXYNOS4_GPX3(1); /* low active */
+	err = gpio_request_one(pdata->gpio_host_detect, GPIOF_IN, "HOST_DETECT");
+	if (err) {
+		printk(KERN_ERR "failed to request gpio_host_detect\n");
+		return;
+	}
+
+	s3c_gpio_cfgpin(pdata->gpio_host_detect, S3C_GPIO_SFN(0xF));
+	s3c_gpio_setpull(pdata->gpio_host_detect, S3C_GPIO_PULL_NONE);
+	gpio_free(pdata->gpio_host_detect);
+
+	pdata->gpio_device_detect = EXYNOS4_GPX1(6); /* high active */
+	err = gpio_request_one(pdata->gpio_device_detect, GPIOF_IN, "DEVICE_DETECT");
+	if (err) {
+		printk(KERN_ERR "failed to request gpio_host_detect for\n");
+		return;
+	}
+
+	s3c_gpio_cfgpin(pdata->gpio_device_detect, S3C_GPIO_SFN(0xF));
+	s3c_gpio_setpull(pdata->gpio_device_detect, S3C_GPIO_PULL_NONE);
+	gpio_free(pdata->gpio_device_detect);
+
+	pdata->gpio_host_vbus = EXYNOS4_GPL2(0);
+	err = gpio_request_one(pdata->gpio_host_vbus, GPIOF_OUT_INIT_LOW, "HOST_VBUS_CONTROL");
+	if (err) {
+		printk(KERN_ERR "failed to request gpio_host_vbus\n");
+		return;
+	}
+
+	s3c_gpio_setpull(pdata->gpio_host_vbus, S3C_GPIO_PULL_NONE);
+	gpio_free(pdata->gpio_host_vbus);
+
+	s5p_usbswitch_set_platdata(pdata);
+}
+#endif
+
 #ifdef CONFIG_BUSFREQ_OPP
 /* BUSFREQ to control memory/bus*/
 static struct device_domain busfreq;
@@ -1844,6 +1888,9 @@ static void __init odroid_machine_init(void)
 #endif
 #ifdef CONFIG_USB_GADGET
 	smdk4x12_usbgadget_init();
+#endif
+#ifdef CONFIG_USB_EXYNOS_SWITCH
+	smdk4x12_usbswitch_init();
 #endif
 
 	samsung_bl_set(&odroid_bl_gpio_info, &odroid_bl_data);
