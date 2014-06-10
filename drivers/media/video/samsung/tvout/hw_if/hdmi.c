@@ -65,8 +65,6 @@
 #define STATE_RX_STOP		12
 
 
-
-
 static struct {
 	s32	state;
 	u8	*buffer;
@@ -1206,6 +1204,7 @@ s32 s5p_hdmi_phy_config(
 	s32 size;
 	u8 buffer[32] = {0, };
 	u8 reg;
+	int loop =0; 
 
 	switch (cd) {
 	case HDMI_CD_24:
@@ -1272,6 +1271,9 @@ s32 s5p_hdmi_phy_config(
 #else
 	do {
 		reg = readb(hdmi_base + S5P_HDMI_PHY_STATUS);
+		mdelay(5);
+		loop++;
+		if(loop==100) return -1;        //added yqf, for robust
 	} while (!(reg & S5P_HDMI_PHY_STATUS_READY));
 #endif
 
@@ -1287,11 +1289,17 @@ void s5p_hdmi_set_gcp(enum s5p_hdmi_color_depth	depth, u8 *gcp)
 	case HDMI_CD_48:
 		gcp[1] = S5P_HDMI_GCP_48BPP; break;
 	case HDMI_CD_36:
-		gcp[1] = S5P_HDMI_GCP_36BPP; break;
+		gcp[1] = S5P_HDMI_GCP_36BPP; 
+		gcp[2] =S5P_HDMI_DC_CTL_12;  //added yqf, refer to FW
+		break;
 	case HDMI_CD_30:
-		gcp[1] = S5P_HDMI_GCP_30BPP; break;
+		gcp[1] = S5P_HDMI_GCP_30BPP; 
+		gcp[2] =S5P_HDMI_DC_CTL_10;
+		break;
 	case HDMI_CD_24:
-		gcp[1] = S5P_HDMI_GCP_24BPP; break;
+		gcp[1] = S5P_HDMI_GCP_24BPP; 
+		gcp[2] =S5P_HDMI_DC_CTL_8;
+		break;
 
 	default:
 		break;
@@ -1349,7 +1357,8 @@ void s5p_hdmi_reg_gcp(u8 i_p, u8 *gcp)
 {
 	u32 gcp_con;
 
-	writeb(gcp[2], hdmi_base + S5P_HDMI_GCP_BYTE2);
+	writeb(gcp[1], hdmi_base + S5P_HDMI_GCP_BYTE2);  //added yqf, view s5p_hdmi_set_gcp(), back
+	writeb(gcp[2], hdmi_base + S5P_HDMI_DC_CONTROL);  
 
 	gcp_con = readb(hdmi_base + S5P_HDMI_GCP_CON);
 
@@ -1483,6 +1492,7 @@ void s5p_hdmi_reg_infoframe(struct s5p_hdmi_infoframe *info, u8 *data, u8 type_3
 		writeb((u8)0x84, hdmi_base + S5P_HDMI_AUI_HEADER0);
 		writeb((u8)0x01, hdmi_base + S5P_HDMI_AUI_HEADER1);
 		writeb((u8)0x0a, hdmi_base + S5P_HDMI_AUI_HEADER2);
+
 		sum_addr	= S5P_HDMI_AUI_CHECK_SUM;
 		start_addr	= S5P_HDMI_AUI_BYTE1;
 		break;
@@ -1501,6 +1511,7 @@ void s5p_hdmi_reg_infoframe(struct s5p_hdmi_infoframe *info, u8 *data, u8 type_3
 
 	/* write checksum */
 	writeb(sum, hdmi_base + sum_addr);
+
 	/* write data */
 	hdmi_write_l(data, hdmi_base, start_addr, info->length);
 }
