@@ -915,7 +915,10 @@ static const struct memdev {
 	[13] = {"s3c-mem", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
 			| S_IWOTH, &s3c_mem_fops},
 #endif
-#ifdef CONFIG_EXYNOS_MEM
+#if defined(CONFIG_EXYNOS_MEM) && defined(CONFIG_ANDROID_442)
+	[14] = {"fimg2d", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
+			| S_IWOTH, &exynos_mem_fops},
+#else
 	[14] = {"exynos-mem", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
 			| S_IWOTH, &exynos_mem_fops},
 #endif

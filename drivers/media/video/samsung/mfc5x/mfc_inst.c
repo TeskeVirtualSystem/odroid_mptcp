@@ -104,9 +104,9 @@ void mfc_destroy_inst(struct mfc_inst_ctx* ctx)
 		}
 
 		if (ctx->state >= INST_STATE_OPEN) {
-			mfc_clock_on();
+			mfc_clock_on(ctx->dev);
 			mfc_cmd_inst_close(ctx);
-			mfc_clock_off();
+			mfc_clock_off(ctx->dev);
 		}
 
 		mfc_free_buf_inst(ctx->id);

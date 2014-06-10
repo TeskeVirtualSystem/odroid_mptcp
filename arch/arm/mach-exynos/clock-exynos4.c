@@ -237,7 +237,7 @@ static int __maybe_unused exynos4_clk_epll_ctrl(struct clk *clk, int enable)
 
 static int exynos4_clk_vpll_ctrl(struct clk *clk, int enable)
 {
-	return s5p_gatectrl(EXYNOS4_VPLL_CON0, clk, enable);
+	return s5p_gatectrl(EXYNOS4_VPLL_CON2, clk, !enable);
 }
 
 int exynos4_clk_ip_dmc_ctrl(struct clk *clk, int enable)
@@ -509,8 +509,8 @@ static struct clksrc_sources exynos4_clkset_vpllsrc = {
 static struct clksrc_clk exynos4_clk_vpllsrc = {
 	.clk	= {
 		.name		= "vpll_src",
-		.enable		= exynos4_clksrc_mask_top_ctrl,
-		.ctrlbit	= (1 << 0),
+		//.enable		= exynos4_clksrc_mask_top_ctrl,
+		//.ctrlbit	= (1 << 0),
 	},
 	.sources = &exynos4_clkset_vpllsrc,
 	.reg_src = { .reg = EXYNOS4_CLKSRC_TOP1, .shift = 0, .size = 1 },
@@ -2098,9 +2098,19 @@ static int exynos4_clock_suspend(void)
 
 static void exynos4_clock_resume(void)
 {
+	unsigned int tmp;
+
 	s3c_pm_do_restore_core(exynos4_clock_save, ARRAY_SIZE(exynos4_clock_save));
 	s3c_pm_do_restore_core(exynos4_epll_save, ARRAY_SIZE(exynos4_epll_save));
 	s3c_pm_do_restore_core(exynos4_vpll_save, ARRAY_SIZE(exynos4_vpll_save));
+
+	do {
+		tmp = __raw_readl(EXYNOS4_EPLL_CON0);
+	} while (!(tmp & 0x1 << EXYNOS4_EPLLCON0_LOCKED_SHIFT));
+
+	do {
+		tmp = __raw_readl(EXYNOS4_VPLL_CON0);
+	} while (!(tmp & 0x1 << EXYNOS4_VPLLCON0_LOCKED_SHIFT));
 }
 #else
 #define exynos4_clock_suspend NULL

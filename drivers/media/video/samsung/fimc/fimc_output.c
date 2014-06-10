@@ -2582,9 +2582,14 @@ int fimc_dqbuf_output(void *fh, struct v4l2_buffer *b)
 		ret = wait_event_timeout(ctrl->wq, (ctx->outq[0] != -1),
 							FIMC_DQUEUE_TIMEOUT);
 		if (ret == 0) {
+			/*If time out, check outq again. Jiangshanbin 2012/07/23*/
+			ret = fimc_pop_outq(ctrl, ctx, &idx);
+			if (ret < 0)
+			{
 			fimc_dump_context(ctrl, ctx);
 			fimc_err("[0] out_queue is empty\n");
 			return -EAGAIN;
+			}
 		} else if (ret == -ERESTARTSYS) {
 			fimc_print_signal(ctrl);
 		} else {

@@ -198,7 +198,7 @@ static int mfc_open(struct inode *inode, struct file *file)
 
 #ifndef CONFIG_PM_RUNTIME
 #ifdef SYSMMU_MFC_ON
-		mfc_clock_on();
+		mfc_clock_on(mfcdev);
 
 		s5p_sysmmu_enable(mfcdev->device);
 
@@ -214,7 +214,7 @@ static int mfc_open(struct inode *inode, struct file *file)
 		 */
 		s5p_sysmmu_tlb_invalidate(mfcdev->device, SYSMMU_MFC_R);
 #endif
-		mfc_clock_off();
+		mfc_clock_off(mfcdev);
 #endif
 #endif
 		/* MFC hardware initialization */
@@ -361,11 +361,11 @@ static int mfc_release(struct inode *inode, struct file *file)
 		}
 	} else {
 #if defined(SYSMMU_MFC_ON) && !defined(CONFIG_VIDEO_MFC_VCM_UMP)
-	mfc_clock_on();
+	mfc_clock_on(mfcdev);
 
 	s5p_sysmmu_tlb_invalidate(dev->device);
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 #endif
 	}
 
@@ -429,10 +429,10 @@ static long mfc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-		mfc_clock_on();
+		mfc_clock_on(mfcdev);
 		in_param.ret_code = mfc_init_decoding(mfc_ctx, &(in_param.args));
 		ret = in_param.ret_code;
-		mfc_clock_off();
+		mfc_clock_off(mfcdev);
 
 		mutex_unlock(&dev->lock);
 		break;
@@ -450,10 +450,10 @@ static long mfc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-		mfc_clock_on();
+		mfc_clock_on(mfcdev);
 		in_param.ret_code = mfc_init_encoding(mfc_ctx, &(in_param.args));
 		ret = in_param.ret_code;
-		mfc_clock_off();
+		mfc_clock_off(mfcdev);
 
 		mutex_unlock(&dev->lock);
 		break;
@@ -471,10 +471,10 @@ static long mfc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-		mfc_clock_on();
+		mfc_clock_on(mfcdev);
 		in_param.ret_code = mfc_exec_decoding(mfc_ctx, &(in_param.args));
 		ret = in_param.ret_code;
-		mfc_clock_off();
+		mfc_clock_off(mfcdev);
 
 		mutex_unlock(&dev->lock);
 		break;
@@ -492,10 +492,10 @@ static long mfc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			break;
 		}
 
-		mfc_clock_on();
+		mfc_clock_on(mfcdev);
 		in_param.ret_code = mfc_exec_encoding(mfc_ctx, &(in_param.args));
 		ret = in_param.ret_code;
-		mfc_clock_off();
+		mfc_clock_off(mfcdev);
 
 		mutex_unlock(&dev->lock);
 		break;
@@ -1180,6 +1180,8 @@ static int __devinit mfc_probe(struct platform_device *pdev)
 		(soc_is_exynos4412() && (samsung_rev() < EXYNOS4412_REV_1_1)))
 		mfc_pd_enable();
 
+	disable_irq(mfcdev->irq);
+
 	mfc_info("MFC(Multi Function Codec - FIMV v5.x) registered successfully\n");
 
 	return 0;
@@ -1190,30 +1192,30 @@ err_misc_reg:
 err_buf_mgr:
 #ifdef SYSMMU_MFC_ON
 #ifdef CONFIG_VIDEO_MFC_VCM_UMP
-	mfc_clock_on();
+	mfc_clock_on(mfcdev);
 
 	vcm_deactivate(mfcdev->vcm_info.sysmmu_vcm);
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 
 err_act_vcm:
 #endif
-	mfc_clock_on();
+	mfc_clock_on(mfcdev);
 
 	s5p_sysmmu_disable(mfcdev->device);
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 #endif
 	if (mfcdev->fw.info)
 		release_firmware(mfcdev->fw.info);
 
 err_fw_req:
 	/* FIXME: make kenel dump when probe fail */
-	mfc_clock_on();
+	mfc_clock_on(mfcdev);
 
 	mfc_final_mem_mgr(mfcdev);
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 
 err_mem_mgr:
 	mfc_final_pm(mfcdev);
@@ -1251,7 +1253,7 @@ static int __devexit mfc_remove(struct platform_device *pdev)
 
 	mfc_final_buf();
 #ifdef SYSMMU_MFC_ON
-	mfc_clock_on();
+	mfc_clock_on(mfcdev);
 
 #ifdef CONFIG_VIDEO_MFC_VCM_UMP
 	vcm_deactivate(mfcdev->vcm_info.sysmmu_vcm);
@@ -1259,7 +1261,7 @@ static int __devexit mfc_remove(struct platform_device *pdev)
 
 	s5p_sysmmu_disable(mfcdev->device);
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 #endif
 	if (dev->fw.info)
 		release_firmware(dev->fw.info);
@@ -1307,7 +1309,7 @@ static int mfc_resume(struct device *dev)
 		return 0;
 
 #ifdef SYSMMU_MFC_ON
-	mfc_clock_on();
+	mfc_clock_on(dev);
 
 	s5p_sysmmu_enable(dev);
 
@@ -1317,7 +1319,7 @@ static int mfc_resume(struct device *dev)
 	s5p_sysmmu_set_tablebase_pgd(dev, __pa(swapper_pg_dir));
 #endif
 
-	mfc_clock_off();
+	mfc_clock_off(mfcdev);
 #endif
 
 	mutex_lock(&m_dev->lock);
@@ -1360,7 +1362,7 @@ static int mfc_runtime_resume(struct device *dev)
 
 #ifdef SYSMMU_MFC_ON
 	if (pre_power == 0) {
-		mfc_clock_on();
+		mfc_clock_on(dev);
 
 		s5p_sysmmu_enable(dev);
 
@@ -1370,7 +1372,7 @@ static int mfc_runtime_resume(struct device *dev)
 		s5p_sysmmu_set_tablebase_pgd(dev, __pa(swapper_pg_dir));
 #endif
 
-		mfc_clock_off();
+		mfc_clock_off(dev);
 	}
 #endif
 

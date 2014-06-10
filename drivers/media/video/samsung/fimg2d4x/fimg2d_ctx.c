@@ -113,6 +113,13 @@ static void fimg2d_fixup_params(struct fimg2d_bltcmd *cmd)
 		(scl->src_w == scl->dst_w && scl->src_h == scl->dst_h))
 		scl->mode = NO_SCALING;
 
+	/* avoid src or dst size is error */
+	if (scl->mode &&
+			(scl->src_w == 0 || 
+			scl->src_h == 0 ||
+			scl->dst_w == 0 ||
+			scl->dst_h == 0))
+		scl->mode = NO_SCALING;
 	src = &cmd->image[ISRC];
 	dst = &cmd->image[IDST];
 

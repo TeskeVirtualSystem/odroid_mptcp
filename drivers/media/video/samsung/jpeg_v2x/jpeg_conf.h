@@ -89,4 +89,5 @@ static u32 ITU_H_tbl_val_AC_chrominance[41] = {
 	0xe5e4e3e2, 0xe9e8e7e6, 0xf4f3f2ea, 0xf8f7f6f5,
 	0x0000faf9
 };
+
 #endif /* __JPEG_CONF_H__ */

@@ -70,10 +70,6 @@ irqreturn_t mfc_irq(int irq, void *dev_id)
 	}
 #endif
 
-	/* FIXME: codec wait_queue processing */
-	dev->irq_sys = 1;
-	wake_up(&dev->wait_sys);
-
 	/*
 	 * FIXME: check is codec command return or error
 	 * move to mfc_wait_codec() ?
@@ -82,6 +78,10 @@ irqreturn_t mfc_irq(int irq, void *dev_id)
 
 	write_reg(0, MFC_RISC2HOST_CMD);
 	write_reg(0, MFC_RISC_HOST_INT);
+
+	/* FIXME: codec wait_queue processing */
+	dev->irq_sys = 1;
+	wake_up(&dev->wait_sys);
 
 	return IRQ_HANDLED;
 }

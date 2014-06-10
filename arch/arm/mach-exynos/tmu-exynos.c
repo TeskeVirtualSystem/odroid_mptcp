@@ -498,12 +498,14 @@ static int exynos_tc_volt(struct tmu_info *info, int enable)
 		if (ret)
 			goto err_lock;
 #endif
+#if !defined(CONFIG_ANDROID_442)
 		ret = mali_voltage_lock_push(data->temp_compensate.g3d_volt);
 		if (ret < 0) {
 			pr_err("TMU: g3d_push error: %u uV\n",
 				data->temp_compensate.g3d_volt);
 			goto err_lock;
 		}
+#endif
 		pr_info("Lock for TC is sucessful..\n");
 	} else {
 		exynos_cpufreq_lock_free(DVFS_LOCK_ID_TMU);
@@ -512,11 +514,13 @@ static int exynos_tc_volt(struct tmu_info *info, int enable)
 		if (ret)
 			goto err_unlock;
 #endif
+#if !defined(CONFIG_ANDROID_442)
 		ret = mali_voltage_lock_pop();
 		if (ret < 0) {
 			pr_err("TMU: g3d_pop error\n");
 			goto err_unlock;
 		}
+#endif
 		pr_info("Unlock for TC is sucessful..\n");
 	}
 	usage = enable;
@@ -819,10 +823,13 @@ static int exynos_tmu_init(struct tmu_info *info)
 		pr_err("get_busfreq_value error\n");
 	}
 #endif
+
+#if !defined(CONFIG_ANDROID_442)
 	if (mali_voltage_lock_init()) {
 		pr_err("Failed to initialize mail voltage lock.\n");
 		return -EINVAL;
 	}
+#endif
 
 	pr_info("%s: cpufreq_level[%d], busfreq_value[%d]\n",
 		 __func__, info->cpulevel_tc, info->busfreq_tc);

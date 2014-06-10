@@ -1436,6 +1436,18 @@ static const struct v4l2_file_operations fimc_fops = {
 	.poll		= fimc_poll,
 };
 
+/*FIMC0 use unlock ioctl for separate control/data flow. Jiangshanbin 2012/05/30*/
+static const struct v4l2_file_operations fimc_fops_async = {
+	.owner		= THIS_MODULE,
+	.open		= fimc_open,
+	.release	= fimc_release,
+	.unlocked_ioctl	= video_ioctl2,
+	.read		= fimc_read,
+	.write		= fimc_write,
+	.mmap		= fimc_mmap,
+	.poll		= fimc_poll,
+};
+
 static void fimc_vdev_release(struct video_device *vdev)
 {
 	kfree(vdev);
@@ -1443,7 +1455,7 @@ static void fimc_vdev_release(struct video_device *vdev)
 
 struct video_device fimc_video_device[FIMC_DEVICES] = {
 	[0] = {
-		.fops = &fimc_fops,
+		.fops = &fimc_fops_async,
 		.ioctl_ops = &fimc_v4l2_ops,
 		.release = fimc_vdev_release,
 	},

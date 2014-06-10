@@ -19,7 +19,7 @@
 #include "mfc_dev.h"
 
 #define MAX_H2R_ARG		4
-#define H2R_CMD_TIMEOUT		100	/* ms */
+#define H2R_CMD_TIMEOUT		1000	/* ms */
 #define H2R_INT_TIMEOUT		5000	/* ms */
 #define CODEC_INT_TIMEOUT	1000	/* ms */
 
