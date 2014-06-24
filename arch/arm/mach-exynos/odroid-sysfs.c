@@ -177,7 +177,9 @@ __setup("audio_in=", audio_in_setup);
 int odroid_get_hdmi_resolution  (void)
 {
     // Bootarg setup 1080p
-    if(!strncmp("1080", HdmiBootArgs, 4))   return   1;
+    if(!strncmp("1080", HdmiBootArgs, 4))   return   3;
+    else if(!strncmp("720", HdmiBootArgs, 4))   return   2;
+    else if(!strncmp("480", HdmiBootArgs, 4))   return   1;
         
     return  (gpio_get_value(EXYNOS4_GPX2(2)) || gpio_get_value(EXYNOS4_GPX0(3)));
 }
@@ -486,7 +488,7 @@ static 	ssize_t set_poweroff_trigger    (struct device *dev, struct device_attri
 
 static	ssize_t show_resolution (struct device *dev, struct device_attribute *attr, char *buf)
 {
-	return	sprintf(buf, "%d\n", odroid_get_hdmi_resolution() ? 1 : 0);
+	return	sprintf(buf, "%d\n", odroid_get_hdmi_resolution());
 }
 static	ssize_t show_vout_mode (struct device *dev, struct device_attribute *attr, char *buf)
 {
