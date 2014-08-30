@@ -41,7 +41,7 @@
 
 #define 	MIC_ADC_GAIN		(3<<4) // +18dB
 #define 	MIC_ADC_VOLUME		(0x03) // 0dB
-#define   	TUNNING_ADC_GAIN    0x30
+#define   	TUNNING_ADC_GAIN    0x03
 
 //----------------------------------------------------------------------------------------
 // playback function
