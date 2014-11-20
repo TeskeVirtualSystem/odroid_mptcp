@@ -5,12 +5,16 @@ config SND_TIMER
 config SND_PCM
 	tristate
 	select SND_TIMER
-	select GCD
+	default y
 
 config SND_HWDEP
 	tristate
+	default y
 
 config SND_RAWMIDI
+	tristate
+	default y
+
 	tristate
 
 # To be effective this also requires INPUT - users should say:
