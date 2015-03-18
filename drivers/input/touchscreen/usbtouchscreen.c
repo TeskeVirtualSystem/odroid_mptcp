@@ -297,7 +297,7 @@ static int egalax_read_data(struct usbtouch_usb *dev, unsigned char *pkt)
 		return 0;
 
 	dev->x = ((pkt[3] & 0x0F) << 7) | (pkt[4] & 0x7F);
-	dev->y = ((pkt[1] & 0x0F) << 7) | (pkt[2] & 0x7F);
+	dev->y = 2047 -( ((pkt[1] & 0x0F) << 7) | (pkt[2] & 0x7F)); //	RockSpoon modified
 	dev->touch = pkt[0] & 0x01;
 
 	return 1;
@@ -955,10 +955,10 @@ static void usbtouch_process_multi(struct usbtouch_usb *usbtouch,
 static struct usbtouch_device_info usbtouch_dev_info[] = {
 #ifdef CONFIG_TOUCHSCREEN_USB_EGALAX
 	[DEVTYPE_EGALAX] = {
-		.min_xc		= 0x0,
-		.max_xc		= 0x07ff,
-		.min_yc		= 0x0,
-		.max_yc		= 0x07ff,
+		.min_xc		= 0x0040,	//	RockSpoon Changed (Original 0x00)
+		.max_xc		= 0x0795,	//	RockSpoon Changed (Original 0x7FF)
+		.min_yc		= 0x0140,	//	RockSpoon Changed (Original 0x00)
+		.max_yc		= 0x0740,	//	RockSpoon Changed (Original 0x7FF)
 		.rept_size	= 16,
 		.process_pkt	= usbtouch_process_multi,
 		.get_pkt_len	= egalax_get_pkt_len,

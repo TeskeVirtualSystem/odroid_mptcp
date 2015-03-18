@@ -1560,6 +1560,7 @@ static int __init mptcp_init(void)
 	struct ctl_table_header *mptcp_sysclt;
 #endif
 
+	pr_info("MPTCP Android: Stable release v0.86.x");
 	mptcp_sock_cache = kmem_cache_create("mptcp_sock",
 					     sizeof(struct mptcp_tcp_sock),
 					     0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
